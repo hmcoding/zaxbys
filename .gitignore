@@ -27,6 +27,10 @@
 *.i*86
 *.x86_64
 *.hex
+*.x
 
 # Debug files
 *.dSYM/
+
+# vim swap file
+*.swp
