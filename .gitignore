@@ -34,3 +34,6 @@
 
 # vim swap file
 *.swp
+
+# FAT32 img
+fat32.img
