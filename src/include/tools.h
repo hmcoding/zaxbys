@@ -2,29 +2,14 @@
 #define TOOLS_H__
 
 
-#define INIT_BUFFER_SIZE 256
+int img_read(void *ptr, long pos, size_t size, size_t nmemb);
 
+unsigned int *read_uint(unsigned int *ptr, long pos);
+unsigned short *read_ushort(unsigned short *ptr, long pos);
+unsigned char *read_uchar(unsigned char *ptr, long pos);
+unsigned int swap_32(unsigned int val);
+unsigned short swap_16(unsigned short val);
 
-/* typedef for a function pointer for functions which grab some environment 
- * variable and puts it into the c-string. The size parameter is the size the
- * function is allowed to copy into the buffer.
- */
-typedef int (*env_getter)(char *, size_t);
-
-char *get_env_value(env_getter getter, size_t init_len);
-
-// new getcwd which follows format of function pointer described above
-int new_getcwd(char *buf, size_t len);
-
-//check the input for invalid data, return zero if good
-int checkInput(char **cmd_args);
-
-
-// new set of functions for grabbing cwd, hostname, and login which are bigger
-// than the initial size of the buffer
-char *full_getcwd(size_t init_len);
-char *full_gethostname(size_t init_len);
-char *full_getlogin_r(size_t init_len);
-
+int check_endian(void);
 
 #endif

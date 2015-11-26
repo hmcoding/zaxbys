@@ -28,6 +28,7 @@
 *.x86_64
 *.hex
 *.x
+noticeablyFAT32
 
 # Debug files
 *.dSYM/
@@ -37,3 +38,5 @@
 
 # FAT32 img
 fat32.img
+fat32_copy.img
+

@@ -4,47 +4,47 @@
 #include "commands.h"
 
 
-int my_open(cmd_args) {
+int my_open(char **cmd_args) {
 	return 0;
 }
 
-int my_close(cmd_args) {
+int my_close(char **cmd_args) {
 	return 0;
 }
 
-int my_create(cmd_args) {
+int my_create(char **cmd_args) {
 	return 0;
 }
 
-int my_rm(cmd_args) {
+int my_rm(char **cmd_args) {
 	return 0;
 }
 
-int my_size(cmd_args) {
+int my_size(char **cmd_args) {
 	return 0;
 }
 
-int my_cd(cmd_args) {
+int my_cd(char **cmd_args) {
 	return 0;
 }
 
-int my_ls(cmd_args) {
+int my_ls(char **cmd_args) {
 	return 0;
 }
 
-int my_mkdir(cmd_args) {
+int my_mkdir(char **cmd_args) {
 	return 0;
 }
 
-int my_rmdir(cmd_args) {
+int my_rmdir(char **cmd_args) {
 	return 0;
 }
 
-int my_read(cmd_args) {
+int my_read(char **cmd_args) {
 	return 0;
 }
 
-int my_write(cmd_args) {
+int my_write(char **cmd_args) {
 	return 0;
 }
 

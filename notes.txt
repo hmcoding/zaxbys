@@ -17,3 +17,7 @@ be implemented are:
 Plan and parts:
 Need to be able to read the raw bytes and grab the necessary data at the
 beginning of the image to read the rest of the image.
+
+
+progression of the shell utility:
+./

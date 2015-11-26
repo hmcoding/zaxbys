@@ -23,7 +23,7 @@ int execute_cmd(char **cmd_args) {
 		my_size(cmd_args);
 	} else if (strcmp(cmd_args[0], "cd") == 0) {
 		my_cd(cmd_args);
-	} else if (strcmp(cmd_args[0], "ls") == ) {
+	} else if (strcmp(cmd_args[0], "ls") == 0) {
 		my_ls(cmd_args);
 	} else if (strcmp(cmd_args[0], "mkdir") == 0) {
 		my_mkdir(cmd_args);
@@ -33,7 +33,7 @@ int execute_cmd(char **cmd_args) {
 		my_read(cmd_args);
 	} else if (strcmp(cmd_args[0], "write") == 0) {
 		my_write(cmd_args);
-	} else if (strcmp(cmd_args[0], "exit")) {
+	} else if (strcmp(cmd_args[0], "exit") == 0) {
 		return 0;
 	} else if (strcmp(cmd_args[0], "help") == 0 || strcmp(cmd_args[0], "-h") == 0) {
 		print_help();
