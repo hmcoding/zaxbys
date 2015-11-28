@@ -2,5 +2,5 @@
 FAT32 Filesystem
 
 To compile:
-`$ cd ./src`
-`$ make`
+	$ cd ./src
+	$ make
