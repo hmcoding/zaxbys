@@ -8,9 +8,11 @@
 #include "parse.h"
 
 // global variables
-int endianess;
+int endianness;
 FILE *fat32_img;
 struct fat32_info img_info;
+unsigned int first_data_sec;
+unsigned int cur_dir_sec;
 char *current_directory;
 
 
@@ -22,11 +24,10 @@ int setup(char *img_filename) {
 		perror(NULL);
 		return 0;
 	}
-	endianess = check_endian();
+	endianness = check_endian();
 	extract_fat32_info();
+	set_root_directory();
 	print_introduction(img_filename);
-	current_directory = calloc(INIT_CUR_DIR_CAP, sizeof(char));
-	strcat(current_directory, "/");
 
 	return 1;
 }
@@ -45,6 +46,18 @@ int extract_fat32_info(void) {
 	read_ushort(&img_info.ext_flags, 40);
 	read_uint(&img_info.root_clus, 44);
 	return 0;
+}
+
+/* sets the first root directory sector, current directory sector and names, and
+ * the first data sector
+ */
+int set_root_directory(void) {
+	first_data_sec = img_info.rsvd_sec_cnt + (img_info.num_fat*img_info.fat_sz32);
+	first_root_sec = get_first_sec_of_clus(img_info.root_clus);
+	cur_dir_sec = first_root_sec;
+	current_directory = calloc(INIT_CUR_DIR_CAP, sizeof(char));
+	strcat(current_directory, "/");
+	return 1;
 }
 
 /* prints the prompt */

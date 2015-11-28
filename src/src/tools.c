@@ -7,7 +7,13 @@
 #include "setup.h"
 
 
+// global variables used in this file
+int endianness;
 FILE *fat32_img;
+struct fat32_info img_info;
+unsigned int first_data_sec;
+unsigned int first_root_sec;
+
 
 /* img_read
  *
@@ -37,7 +43,7 @@ unsigned int *read_uint(unsigned int *ptr, long pos) {
 		perror(NULL);
 		return NULL;
 	}
-	if (endianess) {
+	if (endianness) {
 		*ptr = swap_32(*ptr);
 	}
 	return ptr;
@@ -53,7 +59,7 @@ unsigned short *read_ushort(unsigned short *ptr, long pos) {
 		perror(NULL);
 		return NULL;
 	}
-	if (endianess) {
+	if (endianness) {
 		*ptr = swap_16(*ptr);
 	}
 	return ptr;
@@ -87,4 +93,16 @@ int check_endian(void) {
 	} else {
 		return 1; // big endian
 	}
+}
+
+unsigned int get_first_sec_of_clus(unsigned int clus) {
+	return (clus - 2)*img_info.sec_per_clus + first_data_sec;
+}
+
+/* returns the absolute position of the given cluster in the given FAT in terms
+ * of bytes
+ */
+unsigned long get_fat_cluster_position(unsigned int clus, unsigned int fat) {
+	unsigned int fat_start_sec = img_info.rsvd_sec_cnt + fat*img_info.fat_sz32;
+	return fat_start_sec*img_info.bytes_per_sec + 4*clus;
 }

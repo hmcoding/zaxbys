@@ -12,4 +12,7 @@ unsigned short swap_16(unsigned short val);
 
 int check_endian(void);
 
+unsigned int get_first_sec_of_clus(unsigned int clus);
+unsigned long get_fat_cluster_position(unsigned int clus, unsigned int fat);
+
 #endif

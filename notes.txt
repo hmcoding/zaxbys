@@ -13,11 +13,6 @@ be implemented are:
 10.) read <FILE_NAME> <POSITION> <NUM_BYTES>
 11.) write <FILE_NAME> <POSITION> <NUM_BYTES> <STRING>
 
-
-Plan and parts:
-Need to be able to read the raw bytes and grab the necessary data at the
-beginning of the image to read the rest of the image.
-
-
-progression of the shell utility:
-./
+TODO
+need to locate the root directory sector
+need to locate FAT and subsequent copies
