@@ -9,4 +9,8 @@ void error_open_no_file(char *filename);
 void error_open_directory(char *directory);
 void error_open_bad_param(char *param);
 
+// set of cd errors
+void error_cd_file(char *filename);
+void error_cd_not_here(char *directory);
+
 #endif

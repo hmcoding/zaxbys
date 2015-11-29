@@ -12,7 +12,9 @@
  *
  */
 int execute_cmd(char **cmd_args) {
-	if (strcmp(cmd_args[0], "open") == 0) {
+	if (cmd_args[0] == NULL) {
+		// do nothing
+	} else if (strcmp(cmd_args[0], "open") == 0) {
 		my_open(cmd_args);
 	} else if (strcmp(cmd_args[0], "close") == 0) {
 		my_close(cmd_args);

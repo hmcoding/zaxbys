@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "setup.h"
 #include "directory.h"
@@ -9,19 +11,34 @@
 
 struct fat32_info img_info;
 unsigned int cur_dir_clus;
+char *current_directory;
+unsigned int current_directory_capacity;
 
 
 int my_cd(char **cmd_args) {
+	int found;
+	union directory_entry file;
+	if (cmd_args[1] != NULL) {
+		found = find_file(cmd_args[1], cur_dir_clus, &file);
+		if (!found) {
+			error_cd_not_here(cmd_args[1]);
+		} else if((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
+			error_cd_file(cmd_args[1]);
+		} else { // it's a directory
+			change_directory_cluster(&file);
+			change_current_directory(&file);
+		}
+	}
 	return 0;
 }
 
+/* prints the entries in the given directory in cmd_args[1]
+ */
 int my_ls(char **cmd_args) {
 	int found;
-	char *directory;
 	union directory_entry file;
 	unsigned int dir_clus;
-	directory = cmd_args[1];
-	if (directory == NULL) {
+	if (cmd_args[1] == NULL) {
 		dir_clus = cur_dir_clus;
 	} else {
 		found = find_file(cmd_args[1], cur_dir_clus, &file);
@@ -77,4 +94,53 @@ int print_directory(unsigned int directory_clus) {
 		current_clus = get_next_cluster_in_fat(current_clus);
 	} while (!end_of_chain(current_clus) && !done);
 	return 1;
+}
+
+int change_directory_cluster(union directory_entry *ptr) {
+	unsigned int file_clus;
+	if ((ptr->sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+		file_clus = get_file_cluster(ptr);
+		if (file_clus == 0) {
+			cur_dir_clus = img_info.root_clus;
+		} else {
+			cur_dir_clus = file_clus;
+		}
+	}
+	return 1;
+}
+
+int change_current_directory(union directory_entry *ptr) {
+	char filename[12];
+	unsigned int pen_slash;
+	if ((ptr->sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+		short_to_lowercase(filename, ptr->sf.name);
+		if (get_file_cluster(ptr) == 0) {
+			strcpy(current_directory, "/");
+		} else if (strcmp(filename, ".") == 0) {
+			// do nothing
+		} else if (strcmp(filename, "..") == 0) {
+			pen_slash = find_penultimate_slash();
+			current_directory[pen_slash + 1] = '\0';
+		} else {
+			if (strlen(current_directory) + strlen(filename) + 1 > current_directory_capacity) {
+				current_directory_capacity *= 2;
+				current_directory = realloc(current_directory, current_directory_capacity);
+			}
+			strcat(current_directory, filename);
+			strcat(current_directory, "/");
+		}
+	}
+	return 1;
+}
+
+unsigned int find_penultimate_slash() {
+	unsigned int ultimate, penultimate, i;
+	ultimate = 0, penultimate = 0;
+	for (i = 1; current_directory[i] != '\0'; ++i) {
+		if (current_directory[i] == '/') {
+			penultimate = ultimate;
+			ultimate = i;
+		}
+	}
+	return penultimate;
 }

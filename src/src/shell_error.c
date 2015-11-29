@@ -23,3 +23,11 @@ void error_open_directory(char *directory) {
 void error_open_bad_param(char *param) {
 	printf("Error: %s: incorrect parameter\n", param);
 }
+
+void error_cd_file(char *filename) {
+	printf("Error: %s: not a directory\n", filename);
+}
+
+void error_cd_not_here(char *directory) {
+	printf("Error: %s: does not exist\n", directory);
+}
