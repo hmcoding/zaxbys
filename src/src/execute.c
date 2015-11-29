@@ -6,6 +6,7 @@
 
 #include "execute.h"
 #include "commands.h"
+#include "directory.h"
 
 /* execute_cmd
  *
@@ -34,7 +35,7 @@ int execute_cmd(char **cmd_args) {
 	} else if (strcmp(cmd_args[0], "write") == 0) {
 		my_write(cmd_args);
 	} else if (strcmp(cmd_args[0], "exit") == 0) {
-		return 0;
+		 return my_exit();
 	} else if (strcmp(cmd_args[0], "help") == 0 || strcmp(cmd_args[0], "-h") == 0) {
 		print_help();
 	} else {

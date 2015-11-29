@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "tools.h"
 #include "setup.h"
+#include "file_types.h"
 
 
 // global variables used in this file
@@ -20,16 +21,16 @@ unsigned int first_root_sec;
  * read from the global fat32_img which is in little endian with respect to
  * bytes and convert the data to big endian.
  */
-int img_read(void *ptr, long pos, size_t size, size_t nmemb) {
-	if (fseek(fat32_img, pos, SEEK_SET) == -1) {
+int read_chars(void *ptr, long pos, size_t nmemb) {
+	long offset = pos - ftell(fat32_img);
+	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return 0;
 	}
-	if (fread(ptr, size, nmemb, fat32_img) != nmemb) {
+	if (fread(ptr, sizeof(char), nmemb, fat32_img) != nmemb) {
 		perror(NULL);
 		return 0;
 	}
-	// convert to 
 	return 1;
 }
 
@@ -95,7 +96,7 @@ int check_endian(void) {
 	}
 }
 
-unsigned int get_first_sec_of_clus(unsigned int clus) {
+unsigned int get_first_sector_of_cluster(unsigned int clus) {
 	return (clus - 2)*img_info.sec_per_clus + first_data_sec;
 }
 
@@ -103,6 +104,104 @@ unsigned int get_first_sec_of_clus(unsigned int clus) {
  * of bytes
  */
 unsigned long get_fat_cluster_position(unsigned int clus, unsigned int fat) {
-	unsigned int fat_start_sec = img_info.rsvd_sec_cnt + fat*img_info.fat_sz32;
+	unsigned int i, fat_start_sec;
+	i = fat < img_info.num_fat ? fat : 0;
+	fat_start_sec = img_info.rsvd_sec_cnt + i*img_info.fat_sz32;
 	return fat_start_sec*img_info.bytes_per_sec + 4*clus;
+}
+
+/* returns the next cluster in the chain
+ */
+unsigned int get_next_cluster_in_fat(unsigned int clus) {
+	unsigned long position;
+	unsigned int next_clus;
+	position = get_fat_cluster_position(clus, 0);
+	read_uint(&next_clus, position);
+	return next_clus & NEXT_CLUS_MASK;
+}
+
+int end_of_chain(unsigned int clus) {
+	if ((clus & END_OF_CHAIN) == END_OF_CHAIN) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+int short_to_lowercase(char filename[12], char short_name[11]) {
+	int i, j;
+	for (i = 0, j = 0; i < 11; ++i) {
+		if (short_name[i] != ' ') {
+			if (i == 8) {
+				filename[j++] = '.';
+			}
+			filename[j++] = tolower(short_name[i]);
+		}
+	}
+	for (j = j; j < 12; ++j) {
+		filename[j] = '\0';
+	}
+	return 1;
+}
+
+int filename_to_short(char filename[12], char short_name[11]) {
+	int i;
+	i = 0;
+	while (i < 8 && filename[i] != '.' && filename !='\0') {
+		short_name[i] = toupper(filename[i]);
+		++i;
+	}
+	for (i = i; i < 8; i++) {
+		short_name[i] = ' ';
+	}
+	if (filename[8] == '.') {
+		i = 8;
+		while (i < 11 && filename != '\0') {
+			short_name[i] = toupper(filename[i + 1]);
+		}
+	}
+	return 1;
+}
+
+int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr) {
+	unsigned int current_clus, i, limit, done;
+	union directory_entry file;
+	char short_name[11];
+	filename_to_short(filename, short_name);
+	current_clus = directory_clus;
+	limit = img_info.bytes_per_sec*img_info.sec_per_clus/32;
+	done = 0;
+	do {
+		for (i = 0; i < limit; ++i) {
+			get_directory_entry(&file, current_clus, i);
+			if (file.raw_bytes[0] == 0x00) {
+				done = 1;
+				break;
+			} else if (file.raw_bytes[0] == 0xE5) {
+				continue;
+			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
+				continue;
+			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
+				continue;
+			} else if ((strcmp(file.sf.name, short_name) == 0)) {
+				*ptr = file;
+				return 1;
+			}
+		}
+		current_clus = get_next_cluster_in_fat(current_clus);
+	} while (!end_of_chain(current_clus) && !done);
+	return 0;
+}
+
+unsigned int get_file_cluster(union directory_entry *ptr) {
+	unsigned int file_clus;
+	unsigned short hi, lo;
+	hi = ptr->sf.first_clus_hi;
+	lo = ptr->sf.first_clus_lo;
+	if (endianness) {
+		hi = swap_16(hi);
+		lo = swap_16(lo);
+	}
+	file_clus = (hi << 16) | (lo & 0xFFFF);
+	return file_clus;
 }

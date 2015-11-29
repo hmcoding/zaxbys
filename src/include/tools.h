@@ -2,7 +2,13 @@
 #define TOOLS_H__
 
 
-int img_read(void *ptr, long pos, size_t size, size_t nmemb);
+#define END_OF_CHAIN 0x0FFFFFF8
+#define NEXT_CLUS_MASK 0x0FFFFFFF
+
+// forward declaration of type from another header file
+union directory_entry;
+
+int read_chars(void *ptr, long pos, size_t nmemb);
 
 unsigned int *read_uint(unsigned int *ptr, long pos);
 unsigned short *read_ushort(unsigned short *ptr, long pos);
@@ -12,7 +18,14 @@ unsigned short swap_16(unsigned short val);
 
 int check_endian(void);
 
-unsigned int get_first_sec_of_clus(unsigned int clus);
+unsigned int get_first_sector_of_cluster(unsigned int clus);
 unsigned long get_fat_cluster_position(unsigned int clus, unsigned int fat);
+unsigned int get_next_cluster_in_fat(unsigned int clus);
+int end_of_chain(unsigned int clus);
+
+int short_to_lowercase(char filename[12], char short_name[11]);
+int filename_to_short(char filename[12], char short_name[11]);
+int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr);
+unsigned int get_file_cluster(union directory_entry *ptr);
 
 #endif

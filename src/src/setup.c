@@ -53,7 +53,8 @@ int extract_fat32_info(void) {
  */
 int set_root_directory(void) {
 	first_data_sec = img_info.rsvd_sec_cnt + (img_info.num_fat*img_info.fat_sz32);
-	first_root_sec = get_first_sec_of_clus(img_info.root_clus);
+	first_root_sec = get_first_sector_of_cluster(img_info.root_clus);
+	cur_dir_clus = img_info.root_clus;
 	cur_dir_sec = first_root_sec;
 	current_directory = calloc(INIT_CUR_DIR_CAP, sizeof(char));
 	strcat(current_directory, "/");

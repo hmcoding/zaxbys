@@ -2,13 +2,24 @@
 #include <string.h>
 #include <errno.h>
 
+#include "shell_error.h"
 
-/* shell_perror
- *
- * A simple function which prints the error message for certain commands. It
- * takes the command and argument string (which can be customized by the calling
- * function) and outputs the total error message.
- */
-void shell_perror(char *cmd, int errnum) {
-	fprintf(stderr, "baash: %s: %s\n", cmd, strerror(errnum));
+void error_bad_directory(char *directory) {
+	printf("Error: %s: directory does not exist\n", directory);
+}
+
+void error_open_already(char *filename) {
+	printf("Error: %s: file already open!\n", filename);
+}
+
+void error_open_no_file(char *filename) {
+	printf("Error: %s: file does not exist\n", filename);
+}
+
+void error_open_directory(char *directory) {
+	printf("Error: %s: cannot open directory\n", directory);
+}
+
+void error_open_bad_param(char *param) {
+	printf("Error: %s: incorrect parameter\n", param);
 }

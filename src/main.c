@@ -6,6 +6,7 @@
 #include "execute.h"
 #include "clean.h"
 #include "tools.h"
+#include "file_types.h"
 
 
 int endianness;
@@ -23,7 +24,7 @@ int main(int argc, char *argv[]) {
 	int status;
 
 	if (argc < 2) {
-		printf("USAGE: %s <FAT32 img>", argv[0]);
+		printf("USAGE: %s <FAT32 img>\n", argv[0]);
 		return 0;
 	}
 
@@ -43,7 +44,10 @@ int main(int argc, char *argv[]) {
 	printf("first_root_sec: %u\n", first_root_sec);
 	printf("cur_dir_sec: %u\n", cur_dir_sec);
 	printf("current_directory: %s\n", current_directory);
-	/*status = 1;
+	printf("sizeof struct short_file: %lu\n", sizeof(struct short_file));
+	printf("sizeof struct long_file: %lu\n", sizeof(struct long_file));
+	printf("sizeof union directory_entry: %lu\n", sizeof(union directory_entry));
+	status = 1;
 	while (status) {
 		print_prompt();
 		if((cmd_line = read_input()) == NULL) {
@@ -53,7 +57,7 @@ int main(int argc, char *argv[]) {
 		cmd_args = parse(cmd_line);
 		status = execute_cmd(cmd_args);
 		clean_up_loop(cmd_line, cmd_args);
-	}*/
+	}
 	clean_up_globals();
 
 	return 0;

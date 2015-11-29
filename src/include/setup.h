@@ -23,6 +23,7 @@ extern struct fat32_info img_info;
 extern unsigned int first_data_sec;
 extern unsigned int first_root_sec;
 extern char *current_directory;
+extern unsigned int cur_dir_clus;
 extern unsigned int cur_dir_sec;
 
 // setup functions
