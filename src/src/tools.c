@@ -145,20 +145,21 @@ int short_to_lowercase(char filename[12], char short_name[11]) {
 }
 
 int filename_to_short(char filename[12], char short_name[11]) {
-	int i;
-	i = 0;
-	while (i < 8 && filename[i] != '.' && filename !='\0') {
-		short_name[i] = toupper(filename[i]);
-		++i;
+	int i, j;
+	i = 0, j = 0;
+	while (i < 8 && filename[j] != '.' && filename[j] !='\0') {
+		short_name[i++] = toupper(filename[j++]);
 	}
 	for (i = i; i < 8; i++) {
 		short_name[i] = ' ';
 	}
-	if (filename[8] == '.') {
-		i = 8;
+	if (filename[j++] == '.') {
 		while (i < 11 && filename != '\0') {
-			short_name[i] = toupper(filename[i + 1]);
+			short_name[i++] = toupper(filename[j++]);
 		}
+	}
+	for (i = i; i < 11; ++i) {
+		short_name[i] = ' ';
 	}
 	return 1;
 }
@@ -183,7 +184,7 @@ int find_file(char *filename, unsigned int directory_clus, union directory_entry
 				continue;
 			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
 				continue;
-			} else if ((strcmp(file.sf.name, short_name) == 0)) {
+			} else if ((strncmp(file.sf.name, short_name, 11) == 0)) {
 				*ptr = file;
 				return 1;
 			}
