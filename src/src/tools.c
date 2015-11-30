@@ -225,13 +225,11 @@ void get_time(){
 
   	cur_time = localtime(&rawtime);
 
+	t = ((cur_time->tm_hour*0x0800)+(cur_time->tm_min*0x0020)+(cur_time->tm_sec/2));
 
+	d = (((cur_time->tm_year-80)*0x0200)+((cur_time->tm_mon+1)*0x0020)+(cur_time->tm_mday));
 
-	t = ((cur_time->tm_hour*2048)+(cur_time->tm_min*32)+(cur_time->tm_sec/2));
-
-	d = (((cur_time->tm_year-80)*512)+((cur_time->tm_mon+1)*32)+(cur_time->tm_mday));
-
-	printf("time:  %4x\n",(-t));
+	printf("time:  %4x\n",(t)); 
 	printf("day:  %4x\n",(d));	
 
 return;
