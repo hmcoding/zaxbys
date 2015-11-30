@@ -11,4 +11,8 @@ void error_open_bad_param(char *param);
 void error_used_file(char *file_name);
 void error_specify_file(char *command);      
 
+// set of cd errors
+void error_cd_file(char *filename);
+void error_cd_not_here(char *directory);
+
 #endif

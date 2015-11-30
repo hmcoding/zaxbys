@@ -31,3 +31,11 @@ void error_used_file(char *file_name) {
 void error_specify_file(char *command){
 	printf("Error: %s: please specify a file name\n", command);
 }     
+
+void error_cd_file(char *filename) {
+	printf("Error: %s: not a directory\n", filename);
+}
+
+void error_cd_not_here(char *directory) {
+	printf("Error: %s: does not exist\n", directory);
+}

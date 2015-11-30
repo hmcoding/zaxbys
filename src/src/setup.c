@@ -56,14 +56,15 @@ int set_root_directory(void) {
 	first_root_sec = get_first_sector_of_cluster(img_info.root_clus);
 	cur_dir_clus = img_info.root_clus;
 	cur_dir_sec = first_root_sec;
-	current_directory = calloc(INIT_CUR_DIR_CAP, sizeof(char));
+	current_directory_capacity = INIT_CUR_DIR_CAP;
+	current_directory = calloc(current_directory_capacity, sizeof(char));
 	strcat(current_directory, "/");
 	return 1;
 }
 
 /* prints the prompt */
 void print_prompt(void) {
-	printf("%s]", current_directory);
+	printf("%s] ", current_directory);
 }
 
 /* prints the intro message */

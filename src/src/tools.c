@@ -147,6 +147,13 @@ int short_to_lowercase(char filename[12], char short_name[11]) {
 
 int filename_to_short(char filename[12], char short_name[11]) {
 	int i, j;
+	if (strcmp(filename, ".") == 0) {
+		strcpy(short_name, ".          ");
+		return 1;
+	} else if (strcmp(filename, "..") == 0) {
+		strcpy(short_name, "..         ");
+		return 1;
+	}
 	i = 0, j = 0;
 	while (i < 8 && filename[j] != '.' && filename[j] !='\0') {
 		short_name[i++] = toupper(filename[j++]);
