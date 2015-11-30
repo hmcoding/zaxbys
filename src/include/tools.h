@@ -28,4 +28,6 @@ int filename_to_short(char filename[12], char short_name[11]);
 int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr);
 unsigned int get_file_cluster(union directory_entry *ptr);
 
+void get_time();
+
 #endif

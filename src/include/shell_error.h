@@ -8,5 +8,7 @@ void error_open_already(char *filename);
 void error_open_no_file(char *filename);
 void error_open_directory(char *directory);
 void error_open_bad_param(char *param);
+void error_used_file(char *file_name);
+void error_specify_file(char *command);      
 
 #endif

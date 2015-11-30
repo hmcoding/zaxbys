@@ -23,3 +23,11 @@ void error_open_directory(char *directory) {
 void error_open_bad_param(char *param) {
 	printf("Error: %s: incorrect parameter\n", param);
 }
+
+void error_used_file(char *file_name) {
+	printf("Error: %s: file with that name already exists in surrent directory\n", file_name);
+}
+
+void error_specify_file(char *command){
+	printf("Error: %s: please specify a file name\n", command);
+}     

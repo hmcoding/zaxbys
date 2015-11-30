@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 #include "tools.h"
 #include "setup.h"
@@ -205,4 +206,32 @@ unsigned int get_file_cluster(union directory_entry *ptr) {
 	}
 	file_clus = (hi << 16) | (lo & 0xFFFF);
 	return file_clus;
+}
+
+void get_time(){
+	time_t rawtime;
+	struct tm * cur_time;
+
+	int t = 0x2351;
+	char test = t;
+	
+	printf("test: %04x\n",test);
+
+
+  	time(&rawtime);
+
+  	cur_time = localtime(&rawtime);
+
+	printf ("hour :  %04x:%04x\n", ((cur_time->tm_mon+1)), (cur_time->tm_year-80));
+	printf ("hour :  %2d:%02d\n", (cur_time->tm_hour), cur_time->tm_min);
+	printf ("hour :  %2d:%02d\n", (cur_time->tm_mday), (cur_time->tm_sec)/2);
+
+cur_time->tm_sec = (cur_time->tm_sec/2);
+
+t  = ((cur_time->tm_sec*2048)+(cur_time->tm_min*32)+(cur_time->tm_hour));
+
+
+	printf("t: %16x\n",(t));
+
+return;
 }
