@@ -25,7 +25,7 @@ void error_open_bad_param(char *param) {
 }
 
 void error_used_file(char *file_name) {
-	printf("Error: %s: file with that name already exists in surrent directory\n", file_name);
+	printf("Error: %s: file with that name already exists in current directory\n", file_name);
 }
 
 void error_specify_file(char *command){
