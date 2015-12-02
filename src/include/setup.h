@@ -26,11 +26,13 @@ extern char *current_directory;
 extern unsigned int current_directory_capacity;
 extern unsigned int cur_dir_clus;
 extern unsigned int cur_dir_sec;
+extern struct list *opened_files;
 
 // setup functions
 int setup(char *img_filename);
 int extract_fat32_info(void);
 int set_root_directory(void);
+int set_open_list(void);
 void print_prompt(void);
 void print_introduction(char *img_filename);
 

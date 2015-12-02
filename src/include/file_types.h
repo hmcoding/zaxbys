@@ -44,6 +44,31 @@ union directory_entry {
 	struct long_file lf;
 };
 
+// singlely-linked list definition
+struct node {
+	unsigned int fst_file_clus;
+	struct node *next;
+};
+
+struct list {
+	void (*init)(struct list *m_list);
+	void (*clear)(struct list *m_list);
+	int (*add)(struct list *m_list, unsigned int file_clus);
+	int (*remove)(struct list *m_list, unsigned int file_clus);
+	int (*find)(struct list *m_list, unsigned int file_clus);
+	struct node *head;
+	unsigned int size;
+};
+
+struct list *create_list(void);
+void delete_list(struct list *old_list);
+
+void list_init(struct list *m_list);
+void list_clear(struct list *m_list);
+int list_add(struct list *m_list, unsigned int file_clus);
+int list_remove(struct list *m_list, unsigned int file_clus);
+int list_find(struct list *m_list, unsigned int file_clus);
+
 
 int get_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
 

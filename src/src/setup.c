@@ -6,6 +6,7 @@
 #include "setup.h"
 #include "tools.h"
 #include "parse.h"
+#include "file_types.h"
 
 // global variables
 int endianness;
@@ -14,6 +15,7 @@ struct fat32_info img_info;
 unsigned int first_data_sec;
 unsigned int cur_dir_sec;
 char *current_directory;
+struct list *opened_files;
 
 
 /* setup function which initializes all the global variables and opens the image
@@ -27,6 +29,7 @@ int setup(char *img_filename) {
 	endianness = check_endian();
 	extract_fat32_info();
 	set_root_directory();
+	set_open_list();
 	print_introduction(img_filename);
 
 	return 1;
@@ -59,6 +62,11 @@ int set_root_directory(void) {
 	current_directory_capacity = INIT_CUR_DIR_CAP;
 	current_directory = calloc(current_directory_capacity, sizeof(char));
 	strcat(current_directory, "/");
+	return 1;
+}
+
+int set_open_list(void) {
+	opened_files = create_list();
 	return 1;
 }
 
