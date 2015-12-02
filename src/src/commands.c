@@ -11,6 +11,7 @@ struct list *opened_files;
 
 int my_open(char **cmd_args) {
 	int found;
+<<<<<<< HEAD
 	union directory_entry file;
 	unsigned int file_clus;
 	struct node *file_ptr;
@@ -30,6 +31,7 @@ int my_open(char **cmd_args) {
 			if (file_ptr != NULL) {
 				error_open_already(cmd_args[1]);
 			} else {
+				file.sf.last_acc_date = get_date();
 				opened_files->add(opened_files, get_file_cluster(&file), cmd_args[2]);
 			}
 		}
@@ -74,7 +76,8 @@ int my_create(char **cmd_args) {
 	else { 
 		found = find_file(file_name, cur_dir_clus, &file);
 		if (!(found)){
-			get_time();
+			file.sf.crt_time = file.sf.wrt_time =  get_time();
+			file.sf.crt_date = file.sf.wrt_date =  file.sf.last_acc_date = get_date();
 		}
 		else {
 			error_used_file(file_name);
