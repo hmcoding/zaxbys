@@ -63,7 +63,6 @@ struct list {
 struct list *create_list(void);
 void delete_list(struct list *old_list);
 
-void list_init(struct list *m_list);
 void list_clear(struct list *m_list);
 int list_add(struct list *m_list, unsigned int file_clus, char *mode);
 int list_remove(struct list *m_list, unsigned int file_clus);

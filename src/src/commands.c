@@ -22,7 +22,7 @@ int my_open(char **cmd_args) {
 			error_open_no_file(cmd_args[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
 			error_open_directory(cmd_args[1]);
-		} else if (file_mode_to_byte(cmd_args[2])) {
+		} else if (file_mode_to_byte(cmd_args[2]) == 0x0) {
 			error_open_bad_param(cmd_args[2]);
 		} else {
 			file_clus = get_file_cluster(&file);
