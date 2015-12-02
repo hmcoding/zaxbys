@@ -11,7 +11,6 @@ struct list *opened_files;
 
 int my_open(char **cmd_args) {
 	int found;
-<<<<<<< HEAD
 	union directory_entry file;
 	unsigned int file_clus;
 	struct node *file_ptr;
