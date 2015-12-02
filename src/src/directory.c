@@ -42,11 +42,14 @@ int my_ls(char **cmd_args) {
 		dir_clus = cur_dir_clus;
 	} else {
 		found = find_file(cmd_args[1], cur_dir_clus, &file);
-		if (found && (file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			dir_clus = get_file_cluster(&file);
-		} else {
-			error_bad_directory(cmd_args[1]);
+		if (!found) {
+			error_cd_not_here(cmd_args[1]);
 			return 0;
+		} else if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
+			error_cd_file(cmd_args[1]);
+			return 0;
+		} else {
+			dir_clus = get_file_cluster(&file);
 		}
 	}
 	print_directory(dir_clus);

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "tools.h"
 #include "file_types.h"
@@ -8,7 +9,8 @@
 
 struct fat32_info img_info;
 
-
+// grabs the 32 bytes for the file at (directory_clus, entry_num) and place it
+// where ptr points to
 int get_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num) {
 	unsigned int first_dir_clus, entry_first_byte_offset;
 	first_dir_clus = get_first_sector_of_cluster(directory_clus);
@@ -34,11 +36,13 @@ struct list *create_list(void) {
 	return m_list;
 }
 
+// function for free'ing all the memory
 void delete_list(struct list *old_list) {
 	old_list->clear(old_list);
 	free(old_list);
 }
 
+// frees each entry in the list
 void list_clear(struct list *m_list) {
 	struct node *ptr, *next_ptr;
 	ptr = m_list->head;
@@ -49,11 +53,16 @@ void list_clear(struct list *m_list) {
 	}
 }
 
-int list_add(struct list *m_list, unsigned int file_clus) {
+// adds the entry with the given file cluster and read/write mode
+// will only add with a valid file mode
+int list_add(struct list *m_list, unsigned int file_clus, char *mode) {
 	struct node *new_node;
-	if (!m_list->find(m_list, file_clus)) {
+	unsigned char flags;
+	flags = file_mode_to_byte(mode);
+	if ((m_list->find(m_list, file_clus) != NULL) && (flags != 0)) {
 		new_node = calloc(1, sizeof(struct node));
 		new_node->fst_file_clus = file_clus;
+		new_node->flags = flags;
 		new_node->next = m_list->head;
 		m_list->head = new_node;
 		++(m_list->size);
@@ -62,6 +71,7 @@ int list_add(struct list *m_list, unsigned int file_clus) {
 	return 0;
 }
 
+// removes the given file cluster from the list
 int list_remove(struct list *m_list, unsigned int file_clus) {
 	struct node *ptr, *prev;
 	ptr = m_list->head;
@@ -80,7 +90,8 @@ int list_remove(struct list *m_list, unsigned int file_clus) {
 	return 0;
 }
 
-int list_find(struct list *m_list, unsigned int file_clus) {
+// returns the node pointer to the given file cluster or NULL if it's not there
+struct node *list_find(struct list *m_list, unsigned int file_clus) {
 	struct node *ptr;
 	ptr = m_list->head;
 	while (ptr != NULL) {
@@ -89,9 +100,17 @@ int list_find(struct list *m_list, unsigned int file_clus) {
 		}
 		ptr = ptr->next;
 	}
-	if (ptr == NULL) {
-		return 0;
+	return ptr;
+}
+
+unsigned char file_mode_to_byte(char *mode) {
+	if (strcmp(mode, "r") == 0 ) {
+		return 0x1;
+	} else if (strcmp(mode, "w") == 0) {
+		return 0x2;
+	} else if ((strcmp(mode, "rw") == 0) | (strcmp(mode, "wr") == 0)) {
+		return 0x3;
 	} else {
-		return 1;
+		return 0x0;
 	}
 }

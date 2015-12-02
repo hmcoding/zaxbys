@@ -47,15 +47,15 @@ union directory_entry {
 // singlely-linked list definition
 struct node {
 	unsigned int fst_file_clus;
+	unsigned char flags;
 	struct node *next;
 };
 
 struct list {
-	void (*init)(struct list *m_list);
 	void (*clear)(struct list *m_list);
-	int (*add)(struct list *m_list, unsigned int file_clus);
+	int (*add)(struct list *m_list, unsigned int file_clus, char *mode);
 	int (*remove)(struct list *m_list, unsigned int file_clus);
-	int (*find)(struct list *m_list, unsigned int file_clus);
+	struct node *(*find)(struct list *m_list, unsigned int file_clus);
 	struct node *head;
 	unsigned int size;
 };
@@ -65,10 +65,10 @@ void delete_list(struct list *old_list);
 
 void list_init(struct list *m_list);
 void list_clear(struct list *m_list);
-int list_add(struct list *m_list, unsigned int file_clus);
+int list_add(struct list *m_list, unsigned int file_clus, char *mode);
 int list_remove(struct list *m_list, unsigned int file_clus);
-int list_find(struct list *m_list, unsigned int file_clus);
-
+struct node *list_find(struct list *m_list, unsigned int file_clus);
+unsigned char file_mode_to_byte(char *mode);
 
 int get_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
 
