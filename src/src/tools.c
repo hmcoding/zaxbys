@@ -215,11 +215,11 @@ unsigned int get_file_cluster(union directory_entry *ptr) {
 	return file_clus;
 }
 
-void get_time(){
+short int get_time(union directory_entry *file){
 	time_t rawtime;
 	struct tm * cur_time;
 
-	short int t,d;
+	short int t;
 	
   	time(&rawtime);
 
@@ -227,10 +227,20 @@ void get_time(){
 
 	t = ((cur_time->tm_hour*0x0800)+(cur_time->tm_min*0x0020)+(cur_time->tm_sec/2));
 
-	d = (((cur_time->tm_year-80)*0x0200)+((cur_time->tm_mon+1)*0x0020)+(cur_time->tm_mday));
 
-	printf("time:  %4x\n",(t)); 
-	printf("day:  %4x\n",(d));	
+return t;
+}
 
-return;
+short int get_date(union directory_entry *file){
+	time_t rawtime;
+	struct tm * cur_time;
+	short int d;
+
+  	time(&rawtime);
+
+  	cur_time = localtime(&rawtime);
+
+d = (((cur_time->tm_year-80)*0x0200)+((cur_time->tm_mon+1)*0x0020)+(cur_time->tm_mday));
+
+return d;
 }

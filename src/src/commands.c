@@ -8,23 +8,24 @@
 #include "shell_error.h"
 
 int my_open(char **cmd_args) {
-        int found;
-        char *file_name;
-        union directory_entry file;
-        file_name = cmd_args[1];
-        if (file_name == NULL) {
-		error_specify_file("open");                
-        } else {
-                found = find_file(cmd_args[1], cur_dir_clus, &file);
-         	if (found && ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY)) {
-                       
-                }
-		else {
-                	error_open_no_file(cmd_args[1]);
-                	return 0;
+	int found;
+	char *file_name;
+   union directory_entry file;
+   file_name = cmd_args[1];
+   if (file_name == NULL) {
+		error_specify_file("open");
+		return 0;
+   } else {
+      found = find_file(cmd_args[1], cur_dir_clus, &file);
+      if (found && ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY)) {
+			file.sf.last_acc_date = get_date(&file);
+	
+   	} else {
+      	error_open_no_file(cmd_args[1]);
+      	return 0;
 		}
 	}
-	 return 0;
+	 return 1;
 }
 
 int my_close(char **cmd_args) {
@@ -58,9 +59,8 @@ int my_create(char **cmd_args) {
 	else { 
         	found = find_file(file_name, cur_dir_clus, &file);
 		if (!(found)){
-		get_time();
-
-
+		file.sf.crt_time = file.sf.wrt_time =  get_time(&file);
+		file.sf.crt_date = file.sf.wrt_date =  file.sf.last_acc_date = get_date(&file);
 		}
         	else {
 			error_used_file(file_name);
