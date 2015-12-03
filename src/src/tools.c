@@ -180,7 +180,7 @@ int filename_to_short(char filename[12], char short_name[11]) {
 	return 1;
 }
 
-int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr) {
+int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr) {
 	unsigned int current_clus, i, limit, done;
 	union directory_entry file;
 	char short_name[11];
@@ -202,6 +202,12 @@ int find_file(char *filename, unsigned int directory_clus, union directory_entry
 				continue;
 			} else if ((strncmp(file.sf.name, short_name, 11) == 0)) {
 				*ptr = file;
+				if (clus_ptr != NULL) {
+					*clus_ptr = current_clus;
+				}
+				if (offset_ptr != NULL) {
+					*offset_ptr = i;
+				}
 				return 1;
 			}
 		}
@@ -226,7 +232,7 @@ unsigned int get_file_cluster(union directory_entry *ptr) {
 unsigned short get_time(void){
 	time_t rawtime;
 	struct tm * cur_time;
-	short int t;
+	unsigned short t;
 
 	time(&rawtime);
 	cur_time = localtime(&rawtime);
@@ -240,7 +246,7 @@ unsigned short get_time(void){
 unsigned short get_date(void){
 	time_t rawtime;
 	struct tm * cur_time;
-	short int d;
+	unsigned short d;
 
 	time(&rawtime);
 	cur_time = localtime(&rawtime);

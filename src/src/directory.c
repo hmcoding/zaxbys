@@ -19,7 +19,7 @@ int my_cd(char **cmd_args) {
 	int found;
 	union directory_entry file;
 	if (cmd_args[1] != NULL) {
-		found = find_file(cmd_args[1], cur_dir_clus, &file);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL);
 		if (!found) {
 			error_cd_not_here(cmd_args[1]);
 		} else if((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
@@ -41,7 +41,7 @@ int my_ls(char **cmd_args) {
 	if (cmd_args[1] == NULL) {
 		dir_clus = cur_dir_clus;
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL);
 		if (!found) {
 			error_cd_not_here(cmd_args[1]);
 			return 0;
