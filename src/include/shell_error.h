@@ -1,6 +1,9 @@
 #ifndef SHELL_ERROR_H__
 #define SHELL_ERROR_H__
 
+//parsing errors
+void error_dangling_quote();
+
 // set of open/close errors
 void error_open_already(char *filename);
 void error_open_no_file(char *filename);

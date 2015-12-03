@@ -1,6 +1,11 @@
 #include <stdio.h>
 
 #include "shell_error.h"
+//parsing errors
+void error_dangling_quote(){
+	printf("Error: closing quotation missing!\n");
+}
+
 
 // open/close errors
 void error_open_already(char *filename) {

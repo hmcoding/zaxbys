@@ -25,6 +25,7 @@ char *add_middle_whitespace(char *cmd_line);
 char *remove_trailing_whitespace(char *cmd_line);
 
 // some other utility functions
+int check_end_quote(char *ptr);
 int count_args(char *cmd_line);
 int check_cmd_size(char *cmd_line);
 void destroy_cmd_line(char *cmd_line);

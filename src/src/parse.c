@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "shell_error.h"
 #include "parse.h"
 
 
@@ -127,9 +128,26 @@ char *remove_leading_whitespace(char *cmd_line){
 char *remove_middle_whitespace(char *cmd_line){
 	// copy holds place where char is modified, ptr holds place where checking
 	char *copy = cmd_line, *ptr = cmd_line;
+	int in_quotes = 0;
 	int ws_count = 0;
 	while (*ptr != 0) {
-		if (isspace(*ptr)) {
+		if (*ptr == '"'){
+			if (in_quotes == 0){
+				if (check_end_quote(ptr)){
+			         	error_dangling_quote();
+					cmd_line[0] = 0;
+					break;	
+				}
+				in_quotes = 1;
+			} else {
+			in_quotes = 0;
+			} 
+			
+		} else if (in_quotes){
+			*copy = *ptr;
+			copy++;
+			ws_count = 0;
+		} else if (isspace(*ptr)) {
 			if (ws_count == 0) {
 				*copy = ' ';
 				copy++;
@@ -145,6 +163,22 @@ char *remove_middle_whitespace(char *cmd_line){
 	*copy = '\0';
 	return cmd_line;
 }
+
+
+int check_end_quote(char* ptr){
+	char* init_ptr = ptr++;
+	while (*ptr != 0){
+		if (*ptr == '"'){
+		ptr = init_ptr;
+		return 0;
+		}
+	++ptr;
+	}
+	ptr = init_ptr;
+	return 1;
+}
+
+
 
 /* add_middle_whitespace
  *
