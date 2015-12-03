@@ -59,7 +59,7 @@ int list_add(struct list *m_list, unsigned int file_clus, char *mode) {
 	struct node *new_node;
 	unsigned char flags;
 	flags = file_mode_to_byte(mode);
-	if ((m_list->find(m_list, file_clus) != NULL) && (flags != 0)) {
+	if ((m_list->find(m_list, file_clus) == NULL) && (flags != 0x0)) {
 		new_node = calloc(1, sizeof(struct node));
 		new_node->fst_file_clus = file_clus;
 		new_node->flags = flags;
@@ -83,7 +83,11 @@ int list_remove(struct list *m_list, unsigned int file_clus) {
 		ptr = ptr->next;
 	}
 	if (ptr != NULL) {
-		prev->next = ptr->next;
+		if (ptr == m_list->head) {
+			m_list->head = ptr->next;
+		} else {
+			prev->next = ptr->next;
+		}
 		free(ptr);
 		return 1;
 	}
