@@ -17,11 +17,6 @@ unsigned int first_data_sec;
 unsigned int first_root_sec;
 
 
-/* img_read
- *
- * read from the global fat32_img which is in little endian with respect to
- * bytes and convert the data to big endian.
- */
 int read_chars(void *ptr, long pos, size_t nmemb) {
 	long offset = pos - ftell(fat32_img);
 	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
@@ -29,6 +24,19 @@ int read_chars(void *ptr, long pos, size_t nmemb) {
 		return 0;
 	}
 	if (fread(ptr, sizeof(char), nmemb, fat32_img) != nmemb) {
+		perror(NULL);
+		return 0;
+	}
+	return 1;
+}
+
+int write_chars(void *ptr, long pos, size_t nmemb) {
+	long offset = pos - ftell(fat32_img);
+	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
+		perror(NULL);
+		return 0;
+	}
+	if (fwrite(ptr, sizeof(char), nmemb, fat32_img) != nmemb) {
 		perror(NULL);
 		return 0;
 	}
@@ -215,7 +223,7 @@ unsigned int get_file_cluster(union directory_entry *ptr) {
 	return file_clus;
 }
 
-short int get_time(void){
+unsigned short get_time(void){
 	time_t rawtime;
 	struct tm * cur_time;
 	short int t;
@@ -223,10 +231,13 @@ short int get_time(void){
 	time(&rawtime);
 	cur_time = localtime(&rawtime);
 	t = ((cur_time->tm_hour*0x0800)+(cur_time->tm_min*0x0020)+(cur_time->tm_sec/2));
+	if (endianness) {
+		t = swap_16(t);
+	}
 	return t;
 }
 
-short int get_date(void){
+unsigned short get_date(void){
 	time_t rawtime;
 	struct tm * cur_time;
 	short int d;
@@ -234,5 +245,8 @@ short int get_date(void){
 	time(&rawtime);
 	cur_time = localtime(&rawtime);
 	d = (((cur_time->tm_year-80)*0x0200)+((cur_time->tm_mon+1)*0x0020)+(cur_time->tm_mday));
+	if (endianness) {
+		d = swap_16(d);
+	}
 	return d;
 }

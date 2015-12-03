@@ -9,6 +9,7 @@
 union directory_entry;
 
 int read_chars(void *ptr, long pos, size_t nmemb);
+int write_chars(void *ptr, long pos, size_t nmemb);
 
 unsigned int *read_uint(unsigned int *ptr, long pos);
 unsigned short *read_ushort(unsigned short *ptr, long pos);
@@ -28,7 +29,7 @@ int filename_to_short(char filename[12], char short_name[11]);
 int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr);
 unsigned int get_file_cluster(union directory_entry *ptr);
 
-short int get_time(void);
-short int get_date(void);
+unsigned short get_time(void);
+unsigned short int get_date(void);
 
 #endif

@@ -77,6 +77,7 @@ int check_write(struct node *file);
 unsigned int get_size(union directory_entry *file);
 
 int get_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
+int set_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
 int read_file(union directory_entry *file, unsigned int position, unsigned int size);
 
 
