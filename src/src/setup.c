@@ -21,7 +21,7 @@ struct list *opened_files;
 /* setup function which initializes all the global variables and opens the image
  * in read and write mode.
  */
-int setup(char *img_filename) {
+int setup(char *img_filename, char *exe_name) {
 	if ((fat32_img = fopen(img_filename, "r+")) == NULL) {
 		perror(NULL);
 		return 0;
@@ -30,7 +30,7 @@ int setup(char *img_filename) {
 	extract_fat32_info();
 	set_root_directory();
 	set_open_list();
-	print_introduction(img_filename);
+	print_introduction(img_filename, exe_name);
 
 	return 1;
 }
@@ -76,6 +76,8 @@ void print_prompt(void) {
 }
 
 /* prints the intro message */
-void print_introduction(char *img_filename) {
-	printf("Welcome\nImage, %s, is ready to view\n", img_filename);
+void print_introduction(char *img_filename, char *exe_name) {
+	printf("Welcome to the %s shell utility\n", exe_name);
+	printf("Image, %s, is ready to view\n", img_filename);
+	printf("For a list of commands, type \"help\" or \"h\"\n");
 }

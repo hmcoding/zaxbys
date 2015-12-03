@@ -38,11 +38,10 @@ int execute_cmd(char **cmd_args) {
 		my_write(cmd_args);
 	} else if (strcmp(cmd_args[0], "exit") == 0) {
 		 return my_exit();
-	} else if (strcmp(cmd_args[0], "help") == 0 || strcmp(cmd_args[0], "-h") == 0) {
+	} else if (strcmp(cmd_args[0], "help") == 0 || strcmp(cmd_args[0], "h") == 0) {
 		print_help();
 	} else {
-		printf("command: %s\n",cmd_args[0]);
-		printf("Command is not recognized...\n");
+		printf("command: %s: Command is not recognized\n", cmd_args[0]);
 		print_help();
 	}
 	return 1;

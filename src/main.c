@@ -28,10 +28,10 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 
-	if (!setup(argv[1])) {
+	if (!setup(argv[1], argv[0])) {
 		return 0;
 	}
-	printf("bytes_per_sec: %u\n", img_info.bytes_per_sec);
+	/*printf("bytes_per_sec: %u\n", img_info.bytes_per_sec);
 	printf("sec_per_clus: %u\n", img_info.sec_per_clus);
 	printf("rsvd_sec_cnt: %u\n", img_info.rsvd_sec_cnt);
 	printf("num_fat: %u\n", img_info.num_fat);
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 	printf("current_directory: %s\n", current_directory);
 	printf("sizeof struct short_file: %lu\n", sizeof(struct short_file));
 	printf("sizeof struct long_file: %lu\n", sizeof(struct long_file));
-	printf("sizeof union directory_entry: %lu\n", sizeof(union directory_entry));
+	printf("sizeof union directory_entry: %lu\n", sizeof(union directory_entry));*/
 	status = 1;
 	while (status) {
 		print_prompt();

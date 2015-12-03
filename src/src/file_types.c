@@ -109,12 +109,81 @@ struct node *list_find(struct list *m_list, unsigned int file_clus) {
 
 unsigned char file_mode_to_byte(char *mode) {
 	if (strcmp(mode, "r") == 0 ) {
-		return 0x1;
+		return OPEN_READ;
 	} else if (strcmp(mode, "w") == 0) {
-		return 0x2;
+		return OPEN_WRITE;
 	} else if ((strcmp(mode, "rw") == 0) | (strcmp(mode, "wr") == 0)) {
-		return 0x3;
+		return OPEN_READ | OPEN_WRITE;
 	} else {
-		return 0x0;
+		return OPEN_BAD;
 	}
+}
+
+int check_read(struct node *file) {
+	if ((file->flags & OPEN_READ) == OPEN_READ) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+int check_write(struct node *file) {
+	if ((file->flags & OPEN_WRITE) == OPEN_WRITE) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+unsigned int get_size(union directory_entry *file) {
+	unsigned int size;
+	size = file->sf.file_size;
+	if (endianness) {
+		size = swap_32(size);
+	}
+	return size;
+}
+
+int read_file(union directory_entry *file, unsigned int position, unsigned int size) {
+	unsigned int offset, bytes_left, cur_clus, bytes_per_clus, byte_position, nmemb;
+	char *buffer;
+	bytes_per_clus = img_info.bytes_per_sec*img_info.sec_per_clus;
+	buffer = malloc(sizeof(char)*(bytes_per_clus));
+	offset = position;
+	bytes_left = size;
+	cur_clus = get_file_cluster(file);
+	while (offset > bytes_per_clus) {
+		cur_clus = get_next_cluster_in_fat(cur_clus);
+		if (end_of_chain(cur_clus)) {
+			free(buffer);
+			return 0;
+		}
+		offset -= bytes_per_clus;
+	}
+	byte_position = img_info.bytes_per_sec*get_first_sector_of_cluster(cur_clus) + offset;
+	if (bytes_left > bytes_per_clus - offset) {
+		nmemb = bytes_per_clus - offset;
+	} else {
+		nmemb = bytes_left;
+	}
+	read_chars(buffer, byte_position, nmemb);
+	fwrite(buffer, sizeof(char), nmemb, stdout);
+	bytes_left -= nmemb;
+	while (bytes_left > 0) {
+		cur_clus = get_next_cluster_in_fat(cur_clus);
+		if (end_of_chain(cur_clus)) {
+			free(buffer);
+			return 0;
+		}
+		byte_position = img_info.bytes_per_sec*get_first_sector_of_cluster(cur_clus);
+		if (bytes_left < bytes_per_clus) {
+			nmemb = bytes_left;
+		} else {
+			nmemb = bytes_per_clus;
+		}
+		read_chars(buffer, byte_position, nmemb);
+		fwrite(buffer, sizeof(char), nmemb, stdout);
+		bytes_left -= nmemb;
+	}
+	return 1;
 }

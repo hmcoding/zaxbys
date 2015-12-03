@@ -55,3 +55,17 @@ void error_cd_file(char *filename) {
 void error_cd_not_here(char *directory) {
 	printf("Error: %s: does not exist\n", directory);
 }
+
+
+// read/write errors
+void error_specify_file_pos_size(char *command) {
+	printf("Error: %s: please specify a file name, position, and size\n", command);
+}
+
+void error_not_readable(char *filename) {
+	printf("Error: %s: this file is not open in read mode\n", filename);
+}
+
+void error_beyond_EOF(unsigned int position, unsigned int size, unsigned int file_size) {
+	printf("Error: %u + %u > %u: attempt to read beyond EOF\n", position, size, file_size);
+}

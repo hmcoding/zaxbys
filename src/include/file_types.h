@@ -11,6 +11,10 @@
 #define ATTR_LONG_NAME 			(ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID)
 #define ATTR_LONG_NAME_MASK 	(ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID | ATTR_DIRECTORY | ATTR_ARCHIVE)
 
+#define OPEN_BAD				0x00
+#define OPEN_READ				0x01
+#define OPEN_WRITE				0x02
+
 
 struct short_file {
 	char name[11];
@@ -68,8 +72,12 @@ int list_add(struct list *m_list, unsigned int file_clus, char *mode);
 int list_remove(struct list *m_list, unsigned int file_clus);
 struct node *list_find(struct list *m_list, unsigned int file_clus);
 unsigned char file_mode_to_byte(char *mode);
+int check_read(struct node *file);
+int check_write(struct node *file);
+unsigned int get_size(union directory_entry *file);
 
 int get_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
+int read_file(union directory_entry *file, unsigned int position, unsigned int size);
 
 
 #endif

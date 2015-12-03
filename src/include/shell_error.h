@@ -21,4 +21,9 @@ void error_specify_file(char *command);
 void error_cd_file(char *filename);
 void error_cd_not_here(char *directory);
 
+// set of read/write errors
+void error_specify_file_pos_size(char *command);
+void error_not_readable(char *filename);
+void error_beyond_EOF(unsigned int position, unsigned int size, unsigned int file_size);
+
 #endif

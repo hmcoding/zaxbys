@@ -46,7 +46,7 @@ char **parse(char *line) {
 char *parse_whitespace(char *cmd_line) {
 	remove_leading_whitespace(cmd_line);
 	remove_middle_whitespace(cmd_line);
-	add_middle_whitespace(cmd_line);
+	//add_middle_whitespace(cmd_line);
 	remove_trailing_whitespace(cmd_line);
 	return cmd_line;
 }
@@ -63,16 +63,36 @@ char **parse_arguments(char *cmd_line) {
 	int arg_amount = count_args(cmd_line);
 	// arg_amount + 1 for the null value at the end
 	char **cmd_args = (char **) calloc((size_t)arg_amount + 1, sizeof(char *));
-	char *token, *tmp_line, *save_ptr;
-	char sep[] = " ";
+	char *tmp_line;
 	tmp_line = strdup(cmd_line);
 	int i = 0;
-	token = strtok_r(tmp_line, sep, &save_ptr);
+	int offset, position;
+	position = 0;
+	offset = strcspn(&tmp_line[position], " ");
+	while (offset != 0) {
+		cmd_args[i] = (char *)malloc(offset + 1);
+		strncpy(cmd_args[i], &tmp_line[position], offset);
+		cmd_args[i++][offset] = '\0';
+		if (tmp_line[offset + 1] == '\"') {
+			position += offset + 2;
+			offset = strcspn(&tmp_line[position], "\"");
+			cmd_args[i] = (char *)malloc(offset + 1);
+			strncpy(cmd_args[i], &tmp_line[position], offset);
+			cmd_args[i++][offset] = '\0';
+			++offset;
+		}
+		position += offset + 1;
+		if (tmp_line[position - 1] == '\0') {
+			break;
+		}
+		offset = strcspn(&tmp_line[position], " ");
+	}
+	/*token = strtok_r(tmp_line, sep, &save_ptr);
 	while (token != NULL) {
 		cmd_args[i] = (char *) malloc(strlen(token) + 1);
 		strcpy(cmd_args[i++], token);
 		token = strtok_r(NULL, sep, &save_ptr);
-	}
+	}*/
 	cmd_args[i] = NULL;
 	free(tmp_line);
 	return cmd_args;
@@ -84,10 +104,16 @@ char **parse_arguments(char *cmd_line) {
  * the number of spaces plus one.
  */
 int count_args(char *cmd_line) {
-	int i, count;
+	int i, count, in_quotes;
+	in_quotes = 0;
 	for (i = 0; cmd_line[i] != '\0'; ++i) {
-		if (cmd_line[i] == ' ') {
+		if (cmd_line[i] == ' ' && !in_quotes) {
 			++count;
+		} else if (cmd_line[i] == '\"' && !in_quotes) {
+			++count;
+			in_quotes = 1;
+		} else if (cmd_line[i] == '\"' && in_quotes) {
+			in_quotes = 0;
 		}
 	}
 	return count + 1;
@@ -132,17 +158,19 @@ char *remove_middle_whitespace(char *cmd_line){
 	int ws_count = 0;
 	while (*ptr != 0) {
 		if (*ptr == '"'){
+			*copy = *ptr;
+			copy++;
 			if (in_quotes == 0){
 				if (check_end_quote(ptr)){
-			         	error_dangling_quote();
+					error_dangling_quote();
 					cmd_line[0] = 0;
 					break;	
 				}
 				in_quotes = 1;
 			} else {
-			in_quotes = 0;
+				in_quotes = 0;
 			} 
-			
+
 		} else if (in_quotes){
 			*copy = *ptr;
 			copy++;
@@ -164,21 +192,18 @@ char *remove_middle_whitespace(char *cmd_line){
 	return cmd_line;
 }
 
-
 int check_end_quote(char* ptr){
 	char* init_ptr = ptr++;
 	while (*ptr != 0){
 		if (*ptr == '"'){
-		ptr = init_ptr;
-		return 0;
+			ptr = init_ptr;
+			return 0;
 		}
-	++ptr;
+		++ptr;
 	}
 	ptr = init_ptr;
 	return 1;
 }
-
-
 
 /* add_middle_whitespace
  *

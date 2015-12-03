@@ -29,11 +29,11 @@ extern unsigned int cur_dir_sec;
 extern struct list *opened_files;
 
 // setup functions
-int setup(char *img_filename);
+int setup(char *img_filename, char *exe_name);
 int extract_fat32_info(void);
 int set_root_directory(void);
 int set_open_list(void);
 void print_prompt(void);
-void print_introduction(char *img_filename);
+void print_introduction(char *img_filename, char *exe_name);
 
 #endif
