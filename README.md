@@ -38,4 +38,4 @@ To compile:
 	$ make
 
 To execute:
-	$ ./noticeablyFAT32 ../fat32.img
+	$ ./noticeablyFAT32 <FAT32_IMG>
