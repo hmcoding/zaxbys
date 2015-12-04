@@ -4,6 +4,7 @@
 int my_open(char **cmd_args);
 int my_close(char **cmd_args);
 int my_create(char **cmd_args);
+int create_file(char *file_name,int directory);
 int my_rm(char **cmd_args);
 int my_size(char **cmd_args);
 int my_read(char **cmd_args);

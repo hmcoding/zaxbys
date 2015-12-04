@@ -270,3 +270,28 @@ unsigned int find_open_cluster()
 	}
  return i;
 }
+
+unsigned int find_open_directory_entry(unsigned int directory_clus,union directory_entry *ptr){
+	unsigned int current_clus, i, limit;
+	union directory_entry file;
+	current_clus = directory_clus;
+	limit = img_info.bytes_per_sec*img_info.sec_per_clus/32;
+	do {
+		for (i = 0; i < limit; ++i) {
+			get_directory_entry(&file, current_clus, i);
+			if (file.raw_bytes[0] == 0x00) {
+				return 0;
+			} else if (file.raw_bytes[0] == 0xE5) {
+				*ptr = file;
+				return 1;
+			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
+				continue;
+			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
+				continue;
+			}
+		}
+		current_clus = get_next_cluster_in_fat(current_clus);
+	} while (!end_of_chain(current_clus));
+return 0;
+}
+
