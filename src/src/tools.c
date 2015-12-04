@@ -7,7 +7,7 @@
 #include "tools.h"
 #include "setup.h"
 #include "file_types.h"
-
+#include "shell_error.h"
 
 // global variables used in this file
 int endianness;
@@ -315,6 +315,24 @@ int empty_directory(union directory_entry *dir) {
 	return 1;
 }
 
+unsigned short get_hi(unsigned int clus) {
+	unsigned short hi;
+	hi = (unsigned short)clus >> 16;
+	if (endianness) {
+		hi = swap_16(hi);
+	}
+	return hi;
+}
+
+unsigned short get_lo(unsigned int clus) {
+	unsigned short lo;
+	lo = (unsigned short)clus & 0xFFFF;
+	if (endianness) {
+		lo = swap_16(lo);
+	}
+	return lo;
+}
+
 unsigned short get_time(void){
 	time_t rawtime;
 	struct tm * cur_time;
@@ -342,3 +360,49 @@ unsigned short get_date(void){
 	}
 	return d;
 }
+
+unsigned int find_open_cluster()
+{
+	unsigned long clus;	//cluster data
+	unsigned int found = 1;	//free space found
+	unsigned int i;			//counter
+	
+	
+	for (i = 2;i<0x0FF5;++i) { 
+		clus = get_fat_cluster_position(i,0);
+		if (clus == 0){
+			found = 0;
+			break;
+		}
+	}
+	if (found == 1){
+		error_no_more_space();
+		return 0;	 		 
+	}
+ return i;
+}
+
+unsigned int find_open_directory_entry(unsigned int directory_clus,union directory_entry *ptr){
+	unsigned int current_clus, i, limit;
+	union directory_entry file;
+	current_clus = directory_clus;
+	limit = img_info.bytes_per_sec*img_info.sec_per_clus/32;
+	do {
+		for (i = 0; i < limit; ++i) {
+			get_directory_entry(&file, current_clus, i);
+			if (file.raw_bytes[0] == 0x00) {
+				return 0;
+			} else if (file.raw_bytes[0] == 0xE5) {
+				*ptr = file;
+				return 1;
+			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
+				continue;
+			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
+				continue;
+			}
+		}
+		current_clus = get_next_cluster_in_fat(current_clus);
+	} while (!end_of_chain(current_clus));
+return 0;
+}
+

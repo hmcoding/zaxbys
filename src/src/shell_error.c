@@ -50,6 +50,10 @@ void error_specify_directory(char *command){
 	printf("Error: %s: please specify a directory name\n", command);
 } 
 
+void error_no_more_space(){
+	printf("Error: No more space available on the image!\n");
+}
+
 
 // ls, cd errors
 void error_cd_file(char *filename) {
