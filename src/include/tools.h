@@ -11,6 +11,10 @@ union directory_entry;
 int read_chars(void *ptr, long pos, size_t nmemb);
 int write_chars(void *ptr, long pos, size_t nmemb);
 
+unsigned short get_lo(unsigned int clus);
+unsigned short get_hi(unsigned int clus);
+
+
 unsigned int *read_uint(unsigned int *ptr, long pos);
 unsigned int *write_uint(unsigned int *ptr, long pos);
 unsigned short *read_ushort(unsigned short *ptr, long pos);

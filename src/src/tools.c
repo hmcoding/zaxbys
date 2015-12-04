@@ -365,9 +365,9 @@ unsigned int find_open_cluster()
 	unsigned long clus;	//cluster data
 	unsigned int found = 1;	//free space found
 	unsigned int i;			//counter
+
 	
-	
-	for (i = 2;i<0x0FF5;++i) { 
+	for (i = 2;i<0xFFF5;++i) { 
 		clus = get_fat_cluster_position(i,0);
 		if (clus == 0){
 			found = 0;
