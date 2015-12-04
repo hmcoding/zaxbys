@@ -8,7 +8,7 @@ Group Member's:
 
 Contents:
 	- Readme
-	- Documentation
+	- Paper
 	- src
 		- main.c
 		- Makefile
@@ -38,4 +38,4 @@ To compile:
 	$ make
 
 To execute:
-	$ ./noticeablyFAT32 ../fat32.img
+	$ ./noticeablyFAT32 <FAT32_IMG>

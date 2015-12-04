@@ -223,6 +223,24 @@ unsigned int get_file_cluster(union directory_entry *ptr) {
 	return file_clus;
 }
 
+unsigned short get_hi(unsigned int clus) {
+	unsigned short hi;
+	hi = (unsigned short)clus >> 16;
+	if (endianness) {
+		hi = swap_16(hi);
+	}
+	return hi;
+}
+
+unsigned short get_lo(unsigned int clus) {
+	unsigned short lo;
+	lo = (unsigned short)clus & 0xFFFF;
+	if (endianness) {
+		lo = swap_16(lo);
+	}
+	return lo;
+}
+
 unsigned short get_time(void){
 	time_t rawtime;
 	struct tm * cur_time;
