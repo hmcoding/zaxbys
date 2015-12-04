@@ -8,7 +8,7 @@ Group Member's:
 
 Contents:
 	- Readme
-	- Documentation
+	- Paper
 	- src
 		- main.c
 		- Makefile
