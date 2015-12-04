@@ -106,8 +106,8 @@ int create_file(char *file_name, int directory){
 			clus = find_open_cluster(); 
 			write_chars(eoc,get_fat_cluster_position(clus,0),4);
 			write_chars(eoc,get_fat_cluster_position(clus,1),4);
-			file.sf.first_clus_hi = (clus & 0x00FFFF00)/0x10000;
-			file.sf.first_clus_lo = clus & 0xF8F000FF;
+			file.sf.first_clus_hi = get_hi(clus);
+			file.sf.first_clus_lo = get_lo(clus);
 
 		
 		}
