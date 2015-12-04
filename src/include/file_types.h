@@ -60,6 +60,8 @@ struct list {
 	int (*add)(struct list *m_list, unsigned int file_clus, char *mode);
 	int (*remove)(struct list *m_list, unsigned int file_clus);
 	struct node *(*find)(struct list *m_list, unsigned int file_clus);
+	struct node *(*get_head)(struct list *m_list);
+	int (*empty)(struct list *m_list);
 	struct node *head;
 	unsigned int size;
 };
@@ -71,6 +73,8 @@ void list_clear(struct list *m_list);
 int list_add(struct list *m_list, unsigned int file_clus, char *mode);
 int list_remove(struct list *m_list, unsigned int file_clus);
 struct node *list_find(struct list *m_list, unsigned int file_clus);
+struct node *list_get_head(struct list *m_list);
+int list_empty(struct list *m_list);
 unsigned char file_mode_to_byte(char *mode);
 int check_read(struct node *file);
 int check_write(struct node *file);
@@ -78,7 +82,10 @@ unsigned int get_size(union directory_entry *file);
 
 int get_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
 int set_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
+int get_next_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
 int read_file(union directory_entry *file, unsigned int position, unsigned int size);
+int delete_file(union directory_entry *file, unsigned int directory_clus, unsigned int entry_num, unsigned int name_counter);
+int delete_cluster(unsigned int file_clus);
 
 
 #endif

@@ -13,12 +13,12 @@ struct list *opened_files;
 int my_open(char **cmd_args) {
 	int found;
 	union directory_entry file;
-	unsigned int file_clus;
+	unsigned int file_clus, dir_clus, offset;
 	struct node *file_ptr;
 	if (cmd_args[1] == NULL || cmd_args[2] == NULL) {
 		error_specify_file_and_mode(cmd_args[0]);
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset, NULL);
 		if (!found) {
 			error_open_no_file(cmd_args[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
@@ -32,6 +32,7 @@ int my_open(char **cmd_args) {
 				error_open_already(cmd_args[1]);
 			} else {
 				file.sf.last_acc_date = get_date();
+				set_directory_entry(&file, dir_clus, offset);
 				opened_files->add(opened_files, get_file_cluster(&file), cmd_args[2]);
 			}
 		}
@@ -47,7 +48,7 @@ int my_close(char **cmd_args) {
 	if (cmd_args[1] == NULL) {
 		error_specify_file(cmd_args[0]);
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL, NULL);
 		if (!found) {
 			error_open_no_file(cmd_args[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
@@ -81,7 +82,7 @@ int create_file(char *file_name, int directory){
 	unsigned int clus,i,period_found = 0,file_found;
 	union directory_entry file;
 	char eoc[] = {0x0F,0xFF,0xFF,0xF8};
-	file_found = find_file(file_name, cur_dir_clus, &file);
+	file_found = find_file(file_name, cur_dir_clus, &file, NULL, NULL, NULL);
 		if (!file_found){
 			find_open_directory_entry(cur_dir_clus,&file);
 			for (i=0;i<11;++i){
@@ -108,8 +109,6 @@ int create_file(char *file_name, int directory){
 			write_chars(eoc,get_fat_cluster_position(clus,1),4);
 			file.sf.first_clus_hi = get_hi(clus);
 			file.sf.first_clus_lo = get_lo(clus);
-
-		
 		}
 		else {
 			error_used_file(file_name);
@@ -123,17 +122,24 @@ int my_rm(char **cmd_args) {
 	int found;
 	char *file_name;
 	union directory_entry file;
+	unsigned int file_clus, dir_clus, offset, name_counter;
+	struct node *file_ptr;
 	file_name = cmd_args[1];
 	if (file_name == NULL) {
-		error_specify_file("rm");                
+		error_specify_file(cmd_args[0]);                
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file);
-		if (found && ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY)) {
-
-		}
-		else {
+		found = find_file(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset, &name_counter);
+		if (!found) {
 			error_open_no_file(cmd_args[1]);
-			return 0;
+		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+			error_open_directory(cmd_args[1]);
+		} else {
+			file_clus = get_file_cluster(&file);
+			file_ptr = opened_files->find(opened_files, file_clus);
+			if (file_ptr != NULL) {
+				opened_files->remove(opened_files, file_clus);
+			}
+			delete_file(&file, dir_clus, offset, name_counter);
 		}
 	}
 	return 0;
@@ -145,7 +151,7 @@ int my_size(char **cmd_args) {
 	if (cmd_args[1] == NULL) {
 		error_specify_file(cmd_args[0]);
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL, NULL);
 		if (!found) {
 			error_open_no_file(cmd_args[1]);
 		} else {
@@ -159,7 +165,7 @@ int my_read(char **cmd_args) {
 	int found;
 	union directory_entry file;
 	char *filename;
-	unsigned int file_clus, position, size, file_size;
+	unsigned int file_clus, position, size, file_size, dir_clus, offset;
 	struct node *file_ptr;
 	if (cmd_args[1] == NULL || cmd_args[2] == NULL || cmd_args[3] == NULL) {
 		error_specify_file_pos_size(cmd_args[0]);
@@ -167,7 +173,7 @@ int my_read(char **cmd_args) {
 		filename = cmd_args[1];
 		position = strtoul(cmd_args[2], NULL, 10);
 		size = strtoul(cmd_args[3], NULL, 10);
-		found = find_file(filename, cur_dir_clus, &file);
+		found = find_file(filename, cur_dir_clus, &file, &dir_clus, &offset, NULL);
 		if (!found) {
 			error_open_no_file(filename);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
@@ -183,6 +189,8 @@ int my_read(char **cmd_args) {
 			} else if (position + size > file_size) {
 				error_beyond_EOF(position, size, file_size);
 			} else {
+				file.sf.last_acc_date = get_time();
+				set_directory_entry(&file, dir_clus, offset);
 				read_file(&file, position, size);
 				printf("\n");
 			}
