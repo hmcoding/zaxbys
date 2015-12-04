@@ -84,7 +84,7 @@ int get_directory_entry(union directory_entry *ptr, unsigned int directory_clus,
 int set_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
 int get_next_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
 int read_file(union directory_entry *file, unsigned int position, unsigned int size);
-int delete_file(union directory_entry *file, unsigned int directory_clus, unsigned int entry_num, unsigned int name_counter);
+int delete_file(union directory_entry *file, unsigned int directory_clus, unsigned int entry_num);
 int delete_cluster(unsigned int file_clus);
 
 

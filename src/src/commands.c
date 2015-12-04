@@ -18,7 +18,7 @@ int my_open(char **cmd_args) {
 	if (cmd_args[1] == NULL || cmd_args[2] == NULL) {
 		error_specify_file_and_mode(cmd_args[0]);
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset, NULL);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset);
 		if (!found) {
 			error_open_no_file(cmd_args[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
@@ -48,7 +48,7 @@ int my_close(char **cmd_args) {
 	if (cmd_args[1] == NULL) {
 		error_specify_file(cmd_args[0]);
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL, NULL);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL);
 		if (!found) {
 			error_open_no_file(cmd_args[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
@@ -82,7 +82,7 @@ int create_file(char *file_name, int directory){
 	unsigned int clus,i,period_found = 0,file_found;
 	union directory_entry file;
 	char eoc[] = {0x0F,0xFF,0xFF,0xF8};
-	file_found = find_file(file_name, cur_dir_clus, &file, NULL, NULL, NULL);
+	file_found = find_file(file_name, cur_dir_clus, &file, NULL, NULL);
 		if (!file_found){
 			find_open_directory_entry(cur_dir_clus,&file);
 			for (i=0;i<11;++i){
@@ -122,13 +122,13 @@ int my_rm(char **cmd_args) {
 	int found;
 	char *file_name;
 	union directory_entry file;
-	unsigned int file_clus, dir_clus, offset, name_counter;
+	unsigned int file_clus, dir_clus, offset;
 	struct node *file_ptr;
 	file_name = cmd_args[1];
 	if (file_name == NULL) {
 		error_specify_file(cmd_args[0]);                
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset, &name_counter);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset);
 		if (!found) {
 			error_open_no_file(cmd_args[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
@@ -139,7 +139,7 @@ int my_rm(char **cmd_args) {
 			if (file_ptr != NULL) {
 				opened_files->remove(opened_files, file_clus);
 			}
-			delete_file(&file, dir_clus, offset, name_counter);
+			delete_file(&file, dir_clus, offset);
 		}
 	}
 	return 0;
@@ -151,7 +151,7 @@ int my_size(char **cmd_args) {
 	if (cmd_args[1] == NULL) {
 		error_specify_file(cmd_args[0]);
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL, NULL);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL);
 		if (!found) {
 			error_open_no_file(cmd_args[1]);
 		} else {
@@ -173,7 +173,7 @@ int my_read(char **cmd_args) {
 		filename = cmd_args[1];
 		position = strtoul(cmd_args[2], NULL, 10);
 		size = strtoul(cmd_args[3], NULL, 10);
-		found = find_file(filename, cur_dir_clus, &file, &dir_clus, &offset, NULL);
+		found = find_file(filename, cur_dir_clus, &file, &dir_clus, &offset);
 		if (!found) {
 			error_open_no_file(filename);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {

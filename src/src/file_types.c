@@ -225,7 +225,7 @@ int read_file(union directory_entry *file, unsigned int position, unsigned int s
 	return 1;
 }
 
-int delete_file(union directory_entry *file_ptr, unsigned int directory_clus, unsigned int entry_num, unsigned int name_counter) {
+int delete_file(union directory_entry *file_ptr, unsigned int directory_clus, unsigned int entry_num) {
 	union directory_entry next_file;
 	struct list *clusters;
 	struct node *clus_node;

@@ -30,7 +30,7 @@ int modify_all_fats(unsigned int file_clus, unsigned int value);
 
 int short_to_lowercase(char filename[12], char short_name[11]);
 int filename_to_short(char filename[12], char short_name[11]);
-int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr, unsigned int *name_counter);
+int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr);
 unsigned int get_file_cluster(union directory_entry *ptr);
 unsigned short get_hi(unsigned int clus);
 unsigned short get_lo(unsigned int clus);

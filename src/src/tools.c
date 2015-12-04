@@ -238,15 +238,14 @@ int filename_to_short(char filename[12], char short_name[11]) {
 	return 1;
 }
 
-int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr, unsigned int *name_counter) {
-	unsigned int current_clus, i, limit, done, long_name_counter;
+int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr) {
+	unsigned int current_clus, i, limit, done;
 	union directory_entry file;
 	char short_name[11];
 	filename_to_short(filename, short_name);
 	current_clus = directory_clus;
 	limit = img_info.bytes_per_sec*img_info.sec_per_clus/32;
 	done = 0;
-	long_name_counter = 0;
 	do {
 		for (i = 0; i < limit; ++i) {
 			get_directory_entry(&file, current_clus, i);
@@ -255,12 +254,9 @@ int find_file(char *filename, unsigned int directory_clus, union directory_entry
 				break;
 			} else if (file.raw_bytes[0] == 0xE5) {
 				continue;
-				long_name_counter = 0;
 			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
-				++long_name_counter;
 				continue;
 			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
-				long_name_counter = 0;
 				continue;
 			} else if ((strncmp(file.sf.name, short_name, 11) == 0)) {
 				*ptr = file;
@@ -269,9 +265,6 @@ int find_file(char *filename, unsigned int directory_clus, union directory_entry
 				}
 				if (offset_ptr != NULL) {
 					*offset_ptr = i;
-				}
-				if (name_counter != NULL) {
-					*name_counter = long_name_counter;
 				}
 				return 1;
 			}
@@ -306,7 +299,13 @@ int empty_directory(union directory_entry *dir) {
 			get_directory_entry(&file, current_clus, i);
 			if (j == 0 || j == 1) {
 				continue;
-			} else if (file.raw_bytes[0] != 0xE5 || file.raw_bytes[0] != 0x00) {
+			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
+				continue;
+			} else if (file.raw_bytes[0] == 0xE5) {
+				continue;
+			} else if (file.raw_bytes[0] == 0x00) {
+				return 1;
+			} else {
 				return 0;
 			}
 		}
