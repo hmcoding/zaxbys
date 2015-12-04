@@ -33,6 +33,19 @@ int set_directory_entry(union directory_entry *ptr, unsigned int directory_clus,
 	return 1;
 }
 
+int get_next_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num) {
+	unsigned int first_dir_clus, entry_first_byte_offset, next_num;
+	next_num = entry_num + 1;
+	if ((entry_first_byte_offset = 32*next_num) >= img_info.bytes_per_sec*img_info.sec_per_clus) {
+		first_dir_clus = get_first_sector_of_cluster(get_next_cluster_in_fat(directory_clus));
+		entry_first_byte_offset -= img_info.bytes_per_sec*img_info.sec_per_clus;
+	} else {
+		first_dir_clus = get_first_sector_of_cluster(directory_clus);
+	}
+	read_chars(ptr, entry_first_byte_offset + first_dir_clus*img_info.bytes_per_sec, sizeof(union directory_entry));
+	return 1;
+}
+
 
 // implementation of list and open file table
 struct list *create_list(void) {
@@ -42,6 +55,8 @@ struct list *create_list(void) {
 	m_list->add = &list_add;
 	m_list->remove = &list_remove;
 	m_list->find = &list_find;
+	m_list->get_head = &list_get_head;
+	m_list->empty = &list_empty;
 	m_list->head = NULL;
 	m_list->size = 0;
 	return m_list;
@@ -62,6 +77,7 @@ void list_clear(struct list *m_list) {
 		free(ptr);
 		ptr = next_ptr;
 	}
+	m_list->size = 0;
 }
 
 // adds the entry with the given file cluster and read/write mode
@@ -99,6 +115,7 @@ int list_remove(struct list *m_list, unsigned int file_clus) {
 		} else {
 			prev->next = ptr->next;
 		}
+		--(m_list->size);
 		free(ptr);
 		return 1;
 	}
@@ -116,6 +133,15 @@ struct node *list_find(struct list *m_list, unsigned int file_clus) {
 		ptr = ptr->next;
 	}
 	return ptr;
+}
+
+// returns the head of the list (for stack-like behavior)
+struct node *list_get_head(struct list *m_list) {
+	return m_list->head;
+}
+
+int list_empty(struct list *m_list) {
+	return !m_list->size;
 }
 
 unsigned char file_mode_to_byte(char *mode) {
@@ -196,5 +222,45 @@ int read_file(union directory_entry *file, unsigned int position, unsigned int s
 		fwrite(buffer, sizeof(char), nmemb, stdout);
 		bytes_left -= nmemb;
 	}
+	return 1;
+}
+
+int delete_file(union directory_entry *file_ptr, unsigned int directory_clus, unsigned int entry_num, unsigned int name_counter) {
+	union directory_entry next_file;
+	struct list *clusters;
+	struct node *clus_node;
+	unsigned int file_clus;
+	clusters = create_list();
+	file_clus = get_file_cluster(file_ptr);
+	do {
+		clusters->add(clusters, file_clus, "r");
+		file_clus = get_next_cluster_in_fat(file_clus);
+	} while (!end_of_chain(file_clus));
+
+	while (!clusters->empty(clusters)) {
+		clus_node = clusters->get_head(clusters);
+		delete_cluster(clus_node->fst_file_clus);
+		clusters->remove(clusters, clus_node->fst_file_clus);
+	}
+
+	get_next_directory_entry(&next_file, directory_clus, entry_num);
+	if (next_file.raw_bytes[0] == 0x00) {
+		file_ptr->raw_bytes[0] = 0x00;
+	} else {
+		file_ptr->raw_bytes[0] = 0xE5;
+	}
+	set_directory_entry(file_ptr, directory_clus, entry_num);
+	return 1;
+}
+
+int delete_cluster(unsigned int file_clus) {
+	unsigned int true_value;
+	true_value = get_next_cluster_in_fat_true(file_clus);
+	true_value &= 0xF0000000;
+	modify_all_fats(file_clus, true_value);
+	return 1;
+}
+
+int delete_all_entries(union directory_entry *file, unsigned int directory_clus, unsigned int entry_num, unsigned int name_counter) {
 	return 1;
 }

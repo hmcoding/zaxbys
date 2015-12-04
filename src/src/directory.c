@@ -62,6 +62,25 @@ int my_mkdir(char **cmd_args) {
 }
 
 int my_rmdir(char **cmd_args) {
+	int found;
+	char *file_name;
+	union directory_entry file;
+	unsigned int dir_clus, offset;
+	file_name = cmd_args[1];
+	if (file_name == NULL) {
+		error_specify_directory(cmd_args[0]);                
+	} else {
+		found = find_file(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset);
+		if (!found) {
+			error_open_no_file(cmd_args[1]);
+		} else if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
+			error_bad_directory(cmd_args[1]);
+		} else if (!empty_directory(&file)) {
+			error_not_empty(cmd_args[1]);
+		} else {
+			delete_file(&file, dir_clus, offset);
+		}
+	}
 	return 0;
 }
 

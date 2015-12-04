@@ -17,7 +17,7 @@ int my_open(char **cmd_args) {
 	if (cmd_args[1] == NULL || cmd_args[2] == NULL) {
 		error_specify_file_and_mode(cmd_args[0]);
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset, NULL);
 		if (!found) {
 			error_open_no_file(cmd_args[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
@@ -47,7 +47,7 @@ int my_close(char **cmd_args) {
 	if (cmd_args[1] == NULL) {
 		error_specify_file(cmd_args[0]);
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL, NULL);
 		if (!found) {
 			error_open_no_file(cmd_args[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
@@ -74,7 +74,7 @@ int my_create(char **cmd_args) {
 		error_specify_file("create");                
 	}
 	else { 
-		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL, NULL);
 		if (!(found)){
 			file.sf.crt_time = file.sf.wrt_time =  get_time();
 			file.sf.crt_date = file.sf.wrt_date =  file.sf.last_acc_date = get_date();
@@ -91,17 +91,24 @@ int my_rm(char **cmd_args) {
 	int found;
 	char *file_name;
 	union directory_entry file;
+	unsigned int file_clus, dir_clus, offset, name_counter;
+	struct node *file_ptr;
 	file_name = cmd_args[1];
 	if (file_name == NULL) {
-		error_specify_file("rm");                
+		error_specify_file(cmd_args[0]);                
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL);
-		if (found && ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY)) {
-
-		}
-		else {
+		found = find_file(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset, &name_counter);
+		if (!found) {
 			error_open_no_file(cmd_args[1]);
-			return 0;
+		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+			error_open_directory(cmd_args[1]);
+		} else {
+			file_clus = get_file_cluster(&file);
+			file_ptr = opened_files->find(opened_files, file_clus);
+			if (file_ptr != NULL) {
+				opened_files->remove(opened_files, file_clus);
+			}
+			delete_file(&file, dir_clus, offset, name_counter);
 		}
 	}
 	return 0;
@@ -113,7 +120,7 @@ int my_size(char **cmd_args) {
 	if (cmd_args[1] == NULL) {
 		error_specify_file(cmd_args[0]);
 	} else {
-		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL);
+		found = find_file(cmd_args[1], cur_dir_clus, &file, NULL, NULL, NULL);
 		if (!found) {
 			error_open_no_file(cmd_args[1]);
 		} else {
@@ -135,7 +142,7 @@ int my_read(char **cmd_args) {
 		filename = cmd_args[1];
 		position = strtoul(cmd_args[2], NULL, 10);
 		size = strtoul(cmd_args[3], NULL, 10);
-		found = find_file(filename, cur_dir_clus, &file, &dir_clus, &offset);
+		found = find_file(filename, cur_dir_clus, &file, &dir_clus, &offset, NULL);
 		if (!found) {
 			error_open_no_file(filename);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {

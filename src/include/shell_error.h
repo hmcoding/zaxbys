@@ -16,6 +16,7 @@ void error_not_open(char *filename);
 void error_used_file(char *file_name);
 void error_specify_file_and_mode(char *command);
 void error_specify_file(char *command);
+void error_specify_directory(char *command);
 
 // set of cd errors
 void error_cd_file(char *filename);
@@ -25,5 +26,8 @@ void error_cd_not_here(char *directory);
 void error_specify_file_pos_size(char *command);
 void error_not_readable(char *filename);
 void error_beyond_EOF(unsigned int position, unsigned int size, unsigned int file_size);
+
+void error_bad_directory(char *filename);
+void error_not_empty(char *directory);
 
 #endif

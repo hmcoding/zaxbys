@@ -59,6 +59,26 @@ unsigned int *read_uint(unsigned int *ptr, long pos) {
 	return ptr;
 }
 
+unsigned int *write_uint(unsigned int *ptr, long pos) {
+	long offset;
+	unsigned int copy;
+	offset = pos - ftell(fat32_img);
+	if (endianness) {
+		copy = swap_32(*ptr);
+	} else {
+		copy = *ptr;
+	}
+	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
+		perror(NULL);
+		return NULL;
+	}
+	if (fwrite(&copy, sizeof(unsigned int), 1, fat32_img) != 1) {
+		perror(NULL);
+		return NULL;
+	}
+	return ptr;
+}
+
 unsigned short *read_ushort(unsigned short *ptr, long pos) {
 	long offset = pos - ftell(fat32_img);
 	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
@@ -71,6 +91,26 @@ unsigned short *read_ushort(unsigned short *ptr, long pos) {
 	}
 	if (endianness) {
 		*ptr = swap_16(*ptr);
+	}
+	return ptr;
+}
+
+unsigned short *write_ushort(unsigned short *ptr, long pos) {
+	long offset;
+	unsigned short copy;
+	offset = pos - ftell(fat32_img);
+	if (endianness) {
+		copy = swap_16(*ptr);
+	} else {
+		copy = *ptr;
+	}
+	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
+		perror(NULL);
+		return NULL;
+	}
+	if (fwrite(&copy, sizeof(unsigned short), 1, fat32_img) != 1) {
+		perror(NULL);
+		return NULL;
 	}
 	return ptr;
 }
@@ -129,12 +169,30 @@ unsigned int get_next_cluster_in_fat(unsigned int clus) {
 	return next_clus & NEXT_CLUS_MASK;
 }
 
+unsigned int get_next_cluster_in_fat_true(unsigned int clus) {
+	unsigned long position;
+	unsigned int next_clus;
+	position = get_fat_cluster_position(clus, 0);
+	read_uint(&next_clus, position);
+	return next_clus;
+}
+
 int end_of_chain(unsigned int clus) {
 	if ((clus & END_OF_CHAIN) == END_OF_CHAIN) {
 		return 1;
 	} else {
 		return 0;
 	}
+}
+
+int modify_all_fats(unsigned int file_clus, unsigned int value) {
+	unsigned long position;
+	int i;
+	for (i = 0; i < img_info.num_fat; ++i) {
+		position = get_fat_cluster_position(file_clus, i);
+		write_uint(&value, position);
+	}
+	return 1;
 }
 
 int short_to_lowercase(char filename[12], char short_name[11]) {
@@ -180,14 +238,15 @@ int filename_to_short(char filename[12], char short_name[11]) {
 	return 1;
 }
 
-int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr) {
-	unsigned int current_clus, i, limit, done;
+int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr, unsigned int *name_counter) {
+	unsigned int current_clus, i, limit, done, long_name_counter;
 	union directory_entry file;
 	char short_name[11];
 	filename_to_short(filename, short_name);
 	current_clus = directory_clus;
 	limit = img_info.bytes_per_sec*img_info.sec_per_clus/32;
 	done = 0;
+	long_name_counter = 0;
 	do {
 		for (i = 0; i < limit; ++i) {
 			get_directory_entry(&file, current_clus, i);
@@ -196,9 +255,12 @@ int find_file(char *filename, unsigned int directory_clus, union directory_entry
 				break;
 			} else if (file.raw_bytes[0] == 0xE5) {
 				continue;
+				long_name_counter = 0;
 			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
+				++long_name_counter;
 				continue;
 			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
+				long_name_counter = 0;
 				continue;
 			} else if ((strncmp(file.sf.name, short_name, 11) == 0)) {
 				*ptr = file;
@@ -207,6 +269,9 @@ int find_file(char *filename, unsigned int directory_clus, union directory_entry
 				}
 				if (offset_ptr != NULL) {
 					*offset_ptr = i;
+				}
+				if (name_counter != NULL) {
+					*name_counter = long_name_counter;
 				}
 				return 1;
 			}
@@ -227,6 +292,27 @@ unsigned int get_file_cluster(union directory_entry *ptr) {
 	}
 	file_clus = (hi << 16) | (lo & 0xFFFF);
 	return file_clus;
+}
+
+int empty_directory(union directory_entry *dir) {
+	unsigned int current_clus, i, j, limit, done;
+	union directory_entry file;
+	current_clus = get_file_cluster(dir);
+	limit = img_info.bytes_per_sec*img_info.sec_per_clus/32;
+	done = 0;
+	j = 0;
+	do {
+		for (i = 0; i < limit; ++i, ++j) {
+			get_directory_entry(&file, current_clus, i);
+			if (j == 0 || j == 1) {
+				continue;
+			} else if (file.raw_bytes[0] != 0xE5 || file.raw_bytes[0] != 0x00) {
+				return 0;
+			}
+		}
+		current_clus = get_next_cluster_in_fat(current_clus);
+	} while (!end_of_chain(current_clus) && !done);
+	return 1;
 }
 
 unsigned short get_time(void){

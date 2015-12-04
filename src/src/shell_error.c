@@ -46,6 +46,10 @@ void error_specify_file(char *command){
 	printf("Error: %s: please specify a file name\n", command);
 } 
 
+void error_specify_directory(char *command){
+	printf("Error: %s: please specify a directory name\n", command);
+} 
+
 
 // ls, cd errors
 void error_cd_file(char *filename) {
@@ -68,4 +72,12 @@ void error_not_readable(char *filename) {
 
 void error_beyond_EOF(unsigned int position, unsigned int size, unsigned int file_size) {
 	printf("Error: %u + %u > %u: attempt to read beyond EOF\n", position, size, file_size);
+}
+
+void error_bad_directory(char *filename) {
+	printf("Error: %s: not a directory\n", filename);
+}
+
+void error_not_empty(char *directory) {
+	printf("Error: %s: directory not empty\n", directory);
 }
