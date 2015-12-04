@@ -68,6 +68,7 @@ int my_create(char **cmd_args) {
 	int found;
 	char *file_name;
 	union directory_entry file;
+	unsigned int clus;
 	file_name = cmd_args[1];
 	if (file_name == NULL) {
 		error_specify_file("create");                
@@ -77,6 +78,7 @@ int my_create(char **cmd_args) {
 		if (!(found)){
 			file.sf.crt_time = file.sf.wrt_time =  get_time();
 			file.sf.crt_date = file.sf.wrt_date =  file.sf.last_acc_date = get_date();
+			clus = find_open_cluster(); 
 		}
 		else {
 			error_used_file(file_name);

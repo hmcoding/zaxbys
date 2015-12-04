@@ -32,4 +32,5 @@ unsigned int get_file_cluster(union directory_entry *ptr);
 unsigned short get_time(void);
 unsigned short int get_date(void);
 
+unsigned int find_open_cluster();
 #endif

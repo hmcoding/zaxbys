@@ -7,7 +7,7 @@
 #include "tools.h"
 #include "setup.h"
 #include "file_types.h"
-
+#include "shell_error.h"
 
 // global variables used in this file
 int endianness;
@@ -249,4 +249,24 @@ unsigned short get_date(void){
 		d = swap_16(d);
 	}
 	return d;
+}
+
+unsigned int find_open_cluster()
+{
+	unsigned long clus;	//cluster data
+	unsigned int found = 1;	//free space found
+	unsigned int i;			//counter
+
+	for (i = 2;i<0x0FFFF5;++i) { 
+		clus = get_fat_cluster_position(i,0);
+		if (clus == 0){
+			found = 0;
+			break;
+		}
+	}
+	if (found == 1){
+		error_no_more_space();
+		return 0;	 		 
+	}
+ return i;
 }

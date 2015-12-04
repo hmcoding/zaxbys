@@ -16,6 +16,7 @@ void error_not_open(char *filename);
 void error_used_file(char *file_name);
 void error_specify_file_and_mode(char *command);
 void error_specify_file(char *command);
+void error_no_more_space();
 
 // set of cd errors
 void error_cd_file(char *filename);
