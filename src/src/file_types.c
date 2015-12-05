@@ -314,13 +314,13 @@ int create_directory_entry(char *file_name, unsigned int directory_clus, union d
 	strncpy(file->sf.name, short_name, 11);
 	file->sf.crt_time = file->sf.wrt_time = get_time();
 	file->sf.crt_date = file->sf.wrt_date = file->sf.last_acc_date = get_date();
+	file->sf.file_size = 0;
 	if (find_new_clus) {
 		clus = find_open_cluster();
 		file->sf.first_clus_hi = get_hi(clus);
 		file->sf.first_clus_lo = get_lo(clus);
+		modify_all_fats(clus, END_OF_CHAIN);
 	}
-	file->sf.file_size = 0;
-	modify_all_fats(clus, END_OF_CHAIN);
 	return 0;
 }
 
