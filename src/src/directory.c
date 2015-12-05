@@ -58,6 +58,19 @@ int my_ls(char **cmd_args) {
 }
 
 int my_mkdir(char **cmd_args) {
+	int found;
+	union directory_entry file;
+	unsigned int dir_clus, offset;
+	if (cmd_args[1] == NULL) {
+		error_specify_file(cmd_args[0]);
+	} else {
+		found = find_file(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset);
+		if (found) {
+			error_file_or_directory_exists(cmd_args[1]);
+		} else {
+			create_directory(cmd_args[1], cur_dir_clus);
+		}
+	}
 	return 0;
 }
 

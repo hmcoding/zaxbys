@@ -410,6 +410,7 @@ unsigned int find_open_directory_entry(unsigned int directory_clus, union direct
 			if (offset_ptr != NULL) {
 				*offset_ptr = i;
 			}
+			return 1;
 		}
 		current_clus = get_next_cluster_in_fat(current_clus);
 	} while (!end_of_chain(current_clus));
