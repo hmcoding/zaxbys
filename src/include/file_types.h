@@ -15,6 +15,8 @@
 #define OPEN_READ				0x01
 #define OPEN_WRITE				0x02
 
+#define EMPTY_FILE				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} 
+
 
 struct short_file {
 	char name[11];

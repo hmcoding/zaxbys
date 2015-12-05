@@ -6,7 +6,7 @@
 
 #include "setup.h"
 #include "file_types.h"
-#include "commands.h"
+#include "file_commands.h"
 #include "tools.h"
 #include "shell_error.h"
 
@@ -99,7 +99,7 @@ int my_rm(char **cmd_args) {
 		if (!found) {
 			error_open_no_file(cmd_args[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			error_open_directory(cmd_args[1]);
+			error_remove_directory(cmd_args[1]);
 		} else {
 			file_clus = get_file_cluster(&file);
 			file_ptr = opened_files->find(opened_files, file_clus);

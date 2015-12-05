@@ -104,3 +104,7 @@ void error_not_empty(char *directory) {
 void error_file_or_directory_exists(char *filename) {
 	printf("Error: %s: file or directory exists already\n", filename);
 }
+
+void error_remove_directory(char *directory) {
+	printf("Error: %s: not a file\n", directory);
+}

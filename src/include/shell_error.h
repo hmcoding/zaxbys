@@ -34,5 +34,6 @@ void error_too_large(unsigned int position, unsigned int size);
 void error_bad_directory(char *filename);
 void error_not_empty(char *directory);
 void error_file_or_directory_exists(char *filename);
+void error_remove_directory(char *directory);
 
 #endif

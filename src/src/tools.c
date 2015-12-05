@@ -18,6 +18,7 @@ unsigned int first_root_sec;
 unsigned int count_of_clusters;
 
 
+// reads nmemb amount of characters from fat32_img file at pos
 int read_chars(void *ptr, long pos, size_t nmemb) {
 	long offset = pos - ftell(fat32_img);
 	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
@@ -31,6 +32,7 @@ int read_chars(void *ptr, long pos, size_t nmemb) {
 	return 1;
 }
 
+// writes nmemb amount of characters from fat32_img file at pos
 int write_chars(void *ptr, long pos, size_t nmemb) {
 	long offset = pos - ftell(fat32_img);
 	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
@@ -44,6 +46,7 @@ int write_chars(void *ptr, long pos, size_t nmemb) {
 	return 1;
 }
 
+// reads an unsigned int from fat32_img at pos
 unsigned int *read_uint(unsigned int *ptr, long pos) {
 	long offset = pos - ftell(fat32_img);
 	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
@@ -60,6 +63,7 @@ unsigned int *read_uint(unsigned int *ptr, long pos) {
 	return ptr;
 }
 
+// writes an unsigned int to fat32_img at pos
 unsigned int *write_uint(unsigned int *ptr, long pos) {
 	long offset;
 	unsigned int copy;
@@ -80,6 +84,7 @@ unsigned int *write_uint(unsigned int *ptr, long pos) {
 	return ptr;
 }
 
+// reads an unsigned short from fat32_img at pos
 unsigned short *read_ushort(unsigned short *ptr, long pos) {
 	long offset = pos - ftell(fat32_img);
 	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
@@ -96,6 +101,7 @@ unsigned short *read_ushort(unsigned short *ptr, long pos) {
 	return ptr;
 }
 
+// writes an unsigned short to fat32_img at pos
 unsigned short *write_ushort(unsigned short *ptr, long pos) {
 	long offset;
 	unsigned short copy;
@@ -116,6 +122,7 @@ unsigned short *write_ushort(unsigned short *ptr, long pos) {
 	return ptr;
 }
 
+// reads an unsigned char from fat32_img at pos
 unsigned char *read_uchar(unsigned char *ptr, long pos) {
 	long offset = pos - ftell(fat32_img);
 	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
@@ -129,6 +136,7 @@ unsigned char *read_uchar(unsigned char *ptr, long pos) {
 	return ptr;
 }
 
+// writes an unsigned char to fat32_img at pos
 unsigned int swap_32(unsigned int val) {
 	return ((val>>24)&0xff) | ((val<<8)&0xff0000) | ((val>>8)&0xff00) | ((val<<24)&0xff000000);
 }
@@ -146,6 +154,7 @@ int check_endian(void) {
 	}
 }
 
+// follows the formula from the FAT32 specifications
 unsigned int get_first_sector_of_cluster(unsigned int clus) {
 	return (clus - 2)*img_info.sec_per_clus + first_data_sec;
 }
@@ -170,6 +179,7 @@ unsigned int get_next_cluster_in_fat(unsigned int clus) {
 	return next_clus & NEXT_CLUS_MASK;
 }
 
+// same as above but doesn't apply the NEXT_CLUS_MASK to result
 unsigned int get_next_cluster_in_fat_true(unsigned int clus) {
 	unsigned long position;
 	unsigned int next_clus;
@@ -178,6 +188,7 @@ unsigned int get_next_cluster_in_fat_true(unsigned int clus) {
 	return next_clus;
 }
 
+// checks if the value is one of the end of chain values
 int end_of_chain(unsigned int clus) {
 	if ((clus & END_OF_CHAIN) == END_OF_CHAIN) {
 		return 1;
@@ -186,6 +197,7 @@ int end_of_chain(unsigned int clus) {
 	}
 }
 
+// changes the values in all file allocation tables at file_clus to "value"
 int modify_all_fats(unsigned int file_clus, unsigned int value) {
 	unsigned long position;
 	int i;
@@ -196,6 +208,7 @@ int modify_all_fats(unsigned int file_clus, unsigned int value) {
 	return 1;
 }
 
+// takes a short name and stores transformed name to filename
 int short_to_lowercase(char filename[12], char short_name[11]) {
 	int i, j;
 	for (i = 0, j = 0; i < 11; ++i) {
@@ -212,6 +225,7 @@ int short_to_lowercase(char filename[12], char short_name[11]) {
 	return 1;
 }
 
+// takes filename and stores "short name transformed" string in short_name
 int filename_to_short(char filename[12], char short_name[11]) {
 	int i, j;
 	if (strcmp(filename, ".") == 0) {
@@ -239,6 +253,8 @@ int filename_to_short(char filename[12], char short_name[11]) {
 	return 1;
 }
 
+// finds the file in the given directory entry with name "filename". returns 1
+// if a file is found and 0 if no file is found
 int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr) {
 	unsigned int current_clus, i, limit, done;
 	union directory_entry file;
@@ -275,6 +291,7 @@ int find_file(char *filename, unsigned int directory_clus, union directory_entry
 	return 0;
 }
 
+// gets the first file cluster in the given directory entry
 unsigned int get_file_cluster(union directory_entry *ptr) {
 	unsigned int file_clus;
 	unsigned short hi, lo;
@@ -288,6 +305,7 @@ unsigned int get_file_cluster(union directory_entry *ptr) {
 	return file_clus;
 }
 
+// checks if the directory is empty
 int empty_directory(union directory_entry *dir) {
 	unsigned int current_clus, i, j, limit, done;
 	union directory_entry file;
@@ -315,6 +333,7 @@ int empty_directory(union directory_entry *dir) {
 	return 1;
 }
 
+// returns the hi value of the given cluster
 unsigned short get_hi(unsigned int clus) {
 	unsigned short hi;
 	hi = (unsigned short)clus >> 16;
@@ -324,6 +343,7 @@ unsigned short get_hi(unsigned int clus) {
 	return hi;
 }
 
+// returns the lo value of the given cluster
 unsigned short get_lo(unsigned int clus) {
 	unsigned short lo;
 	lo = (unsigned short)clus & 0xFFFF;
@@ -333,6 +353,7 @@ unsigned short get_lo(unsigned int clus) {
 	return lo;
 }
 
+// returns the time in the FAT32 format
 unsigned short get_time(void){
 	time_t rawtime;
 	struct tm * cur_time;
@@ -347,6 +368,7 @@ unsigned short get_time(void){
 	return t;
 }
 
+// returns the date in the FAT32 format
 unsigned short get_date(void){
 	time_t rawtime;
 	struct tm * cur_time;
@@ -361,6 +383,7 @@ unsigned short get_date(void){
 	return d;
 }
 
+// searches for the next open cluster in the FAT
 unsigned int find_open_cluster() {
 	unsigned int value;	//cluster data
 	unsigned int found = 1;	//free space found
@@ -379,6 +402,7 @@ unsigned int find_open_cluster() {
 	return i;
 }
 
+// finds the next available directory entry
 unsigned int find_open_directory_entry(unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr) {
 	unsigned int current_clus, i, limit, found;
 	union directory_entry file;
@@ -417,6 +441,7 @@ unsigned int find_open_directory_entry(unsigned int directory_clus, union direct
 	return 0;
 }
 
+// sets the next directory entry to 0x00. Expands the directory if necessary
 int set_next_entry_to_null(unsigned int directory_clus, unsigned int entry_num) {
 	union directory_entry file;
 	unsigned int first_dir_clus, entry_first_byte_offset, next_num;
@@ -436,6 +461,7 @@ int set_next_entry_to_null(unsigned int directory_clus, unsigned int entry_num) 
 	return 1;
 }
 
+// function for making room in the file
 int expand_cluster(unsigned int old_clus) {
 	unsigned int new_clus;
 	new_clus = find_open_cluster();

@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "setup.h"
-#include "directory.h"
+#include "directory_commands.h"
 #include "file_types.h"
 #include "tools.h"
 #include "shell_error.h"

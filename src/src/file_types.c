@@ -280,7 +280,7 @@ int delete_file(union directory_entry *file_ptr, unsigned int directory_clus, un
 		clusters->add(clusters, file_clus, "r");
 		file_clus = get_next_cluster_in_fat(file_clus);
 	} while (!end_of_chain(file_clus));
-
+	
 	while (!clusters->empty(clusters)) {
 		clus_node = clusters->get_head(clusters);
 		delete_cluster(clus_node->fst_file_clus);
@@ -293,6 +293,7 @@ int delete_file(union directory_entry *file_ptr, unsigned int directory_clus, un
 	} else {
 		file_ptr->raw_bytes[0] = 0xE5;
 	}
+	delete_list(clusters);
 	set_directory_entry(file_ptr, directory_clus, entry_num);
 	return 1;
 }
@@ -310,19 +311,6 @@ int create_directory_entry(char *file_name, unsigned int directory_clus, union d
 	char short_name[11];
 	find_open_directory_entry(directory_clus, file, clus_ptr, offset_ptr);
 	filename_to_short(file_name, short_name);
-	/*for (i=0; i < 11; ++i) {
-		if (file_name[i] == '\0') {
-			break;
-		} else if(file_name[i] == '.') {
-			while(i < 8)
-				file.sf.name[i++] = ' ';
-			i = 7;
-			period_found = 1;
-		} else if((i > 7) && (period_found == 0)) {
-		} else {
-			file.sf.name[i] = toupper(file_name[i]);
-		}
-	}*/
 	strncpy(file->sf.name, short_name, 11);
 	file->sf.crt_time = file->sf.wrt_time = get_time();
 	file->sf.crt_date = file->sf.wrt_date = file->sf.last_acc_date = get_date();

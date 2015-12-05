@@ -5,8 +5,8 @@
 #include <unistd.h>
 
 #include "execute.h"
-#include "commands.h"
-#include "directory.h"
+#include "file_commands.h"
+#include "directory_commands.h"
 
 /* execute_cmd
  *

@@ -13,7 +13,7 @@
  * into the c-string. Returns the c-string.
  */
 char *read_input() {
-	char *cmd_line = malloc(INPUT_BUFFER_SIZE);
+	char *cmd_line = calloc(INPUT_BUFFER_SIZE, sizeof(char));
 	if (fgets(cmd_line, INPUT_BUFFER_SIZE, stdin)) {
 		return cmd_line;
 	} else {
@@ -60,19 +60,25 @@ char *parse_whitespace(char *cmd_line) {
  * mark the end of the array.
  */
 char **parse_arguments(char *cmd_line) {
-	int arg_amount = count_args(cmd_line);
-	// arg_amount + 1 for the null value at the end
-	char **cmd_args = (char **) calloc((size_t)arg_amount + 1, sizeof(char *));
+	size_t arg_amount;
 	char *tmp_line;
-	tmp_line = strdup(cmd_line);
 	int i = 0;
 	int offset, position;
+	char **cmd_args;
+	arg_amount = 0;
+	arg_amount = count_args(cmd_line);
+	// arg_amount + 1 for the null value at the end
+	cmd_args = calloc(arg_amount + 1, sizeof(char *));
+	tmp_line = strndup(cmd_line, strlen(cmd_line) + 1);
 	position = 0;
 	offset = strcspn(&tmp_line[position], " ");
 	while (offset != 0) {
 		cmd_args[i] = (char *)malloc(offset + 1);
 		strncpy(cmd_args[i], &tmp_line[position], offset);
 		cmd_args[i++][offset] = '\0';
+		if (tmp_line[position + offset] == '\0') {
+			break;
+		}
 		if (tmp_line[position + offset + 1] == '\"') {
 			position += offset + 2;
 			offset = strcspn(&tmp_line[position], "\"");
@@ -103,9 +109,11 @@ char **parse_arguments(char *cmd_line) {
  * This take a c-string and counts the number of arguments which corresponds to
  * the number of spaces plus one.
  */
-int count_args(char *cmd_line) {
-	int i, count, in_quotes;
+size_t count_args(char *cmd_line) {
+	int i, in_quotes;
+	size_t count;
 	in_quotes = 0;
+	count = 0;
 	for (i = 0; cmd_line[i] != '\0'; ++i) {
 		if (cmd_line[i] == ' ' && !in_quotes) {
 			++count;

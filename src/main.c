@@ -31,22 +31,6 @@ int main(int argc, char *argv[]) {
 	if (!setup(argv[1], argv[0])) {
 		return 0;
 	}
-	/*printf("bytes_per_sec: %u\n", img_info.bytes_per_sec);
-	printf("sec_per_clus: %u\n", img_info.sec_per_clus);
-	printf("rsvd_sec_cnt: %u\n", img_info.rsvd_sec_cnt);
-	printf("num_fat: %u\n", img_info.num_fat);
-	printf("root_ent_cnt: %u\n", img_info.root_ent_cnt);
-	printf("tot_sec32: %u\n", img_info.tot_sec32);
-	printf("fat_sz32: %u\n", img_info.fat_sz32);
-	printf("ext_flags: %u\n", img_info.ext_flags);
-	printf("root_clus: %u\n", img_info.root_clus);
-	printf("first_data_sec: %u\n", first_data_sec);
-	printf("first_root_sec: %u\n", first_root_sec);
-	printf("cur_dir_sec: %u\n", cur_dir_sec);
-	printf("current_directory: %s\n", current_directory);
-	printf("sizeof struct short_file: %lu\n", sizeof(struct short_file));
-	printf("sizeof struct long_file: %lu\n", sizeof(struct long_file));
-	printf("sizeof union directory_entry: %lu\n", sizeof(union directory_entry));*/
 	status = 1;
 	while (status) {
 		print_prompt();
