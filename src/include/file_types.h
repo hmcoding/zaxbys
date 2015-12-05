@@ -87,7 +87,7 @@ int read_file(union directory_entry *file, unsigned int position, unsigned int s
 int delete_file(union directory_entry *file, unsigned int directory_clus, unsigned int entry_num);
 int delete_cluster(unsigned int file_clus);
 
-int create_directory_entry(char *file_name, unsigned int directory_clus, union directory_entry *file, unsigned int *clus_ptr, unsigned int *offset_ptr);
+int create_directory_entry(char *file_name, unsigned int directory_clus, union directory_entry *file, unsigned int *clus_ptr, unsigned int *offset_ptr, int find_new_clus);
 int create_file(char *file_name, unsigned int directory_clus);
 int create_directory(char *dir_name, unsigned int directory_clus);
 

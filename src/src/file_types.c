@@ -261,7 +261,7 @@ int delete_cluster(unsigned int file_clus) {
 	return 1;
 }
 
-int create_directory_entry(char *file_name, unsigned int directory_clus, union directory_entry *file, unsigned int *clus_ptr, unsigned int *offset_ptr){
+int create_directory_entry(char *file_name, unsigned int directory_clus, union directory_entry *file, unsigned int *clus_ptr, unsigned int *offset_ptr, int find_new_clus){
 	unsigned int clus;
 	char short_name[11];
 	find_open_directory_entry(directory_clus, file, clus_ptr, offset_ptr);
@@ -282,9 +282,11 @@ int create_directory_entry(char *file_name, unsigned int directory_clus, union d
 	strncpy(file->sf.name, short_name, 11);
 	file->sf.crt_time = file->sf.wrt_time = get_time();
 	file->sf.crt_date = file->sf.wrt_date = file->sf.last_acc_date = get_date();
-	clus = find_open_cluster();
-	file->sf.first_clus_hi = get_hi(clus);
-	file->sf.first_clus_lo = get_lo(clus);
+	if (find_new_clus) {
+		clus = find_open_cluster();
+		file->sf.first_clus_hi = get_hi(clus);
+		file->sf.first_clus_lo = get_lo(clus);
+	}
 	file->sf.file_size = 0;
 	modify_all_fats(clus, END_OF_CHAIN);
 	return 0;
@@ -293,12 +295,33 @@ int create_directory_entry(char *file_name, unsigned int directory_clus, union d
 int create_file(char *file_name, unsigned int directory_clus) {
 	unsigned int clus, offset;
 	union directory_entry file;
-	create_directory_entry(file_name, directory_clus, &file, &clus, &offset);
+	create_directory_entry(file_name, directory_clus, &file, &clus, &offset, 1);
 	file.sf.attr = 0x00;
 	set_directory_entry(&file, clus, offset);
 	return 1;
 }
 
 int create_directory(char *dir_name, unsigned int directory_clus) {
+	unsigned int clus, offset, d_clus, d_offset, dd_clus, dd_offset, new_dir_clus;
+	union directory_entry file, d_file, dd_file;
+	create_directory_entry(dir_name, directory_clus, &file, &clus, &offset, 1);
+	file.sf.attr = 0x10;
+	set_directory_entry(&file, clus, offset);
+	new_dir_clus = get_file_cluster(&file);
+	create_directory_entry(".", new_dir_clus, &d_file, &d_clus, &d_offset, 0);
+	d_file.sf.first_clus_hi = get_hi(new_dir_clus);
+	d_file.sf.first_clus_lo = get_lo(new_dir_clus);
+	d_file.sf.attr = 0x10;
+	set_directory_entry(&d_file, d_clus, d_offset);
+	create_directory_entry("..", new_dir_clus, &dd_file, &dd_clus, &dd_offset, 0);
+	if (directory_clus == img_info.root_clus) {
+		dd_file.sf.first_clus_hi = 0x0000;
+		dd_file.sf.first_clus_lo = 0x0000;
+	} else {
+		dd_file.sf.first_clus_hi = get_hi(directory_clus);
+		dd_file.sf.first_clus_lo = get_lo(directory_clus);
+	}
+	dd_file.sf.attr = 0x10;
+	set_directory_entry(&dd_file, dd_clus, dd_offset);
 	return 1;
 }
