@@ -261,6 +261,44 @@ int delete_cluster(unsigned int file_clus) {
 	return 1;
 }
 
-int delete_all_entries(union directory_entry *file, unsigned int directory_clus, unsigned int entry_num, unsigned int name_counter) {
+int create_directory_entry(char *file_name, unsigned int directory_clus, union directory_entry *file, unsigned int *clus_ptr, unsigned int *offset_ptr){
+	unsigned int clus;
+	char short_name[11];
+	find_open_directory_entry(directory_clus, file, clus_ptr, offset_ptr);
+	filename_to_short(file_name, short_name);
+	/*for (i=0; i < 11; ++i) {
+		if (file_name[i] == '\0') {
+			break;
+		} else if(file_name[i] == '.') {
+			while(i < 8)
+				file.sf.name[i++] = ' ';
+			i = 7;
+			period_found = 1;
+		} else if((i > 7) && (period_found == 0)) {
+		} else {
+			file.sf.name[i] = toupper(file_name[i]);
+		}
+	}*/
+	strncpy(file->sf.name, short_name, 11);
+	file->sf.crt_time = file->sf.wrt_time = get_time();
+	file->sf.crt_date = file->sf.wrt_date = file->sf.last_acc_date = get_date();
+	clus = find_open_cluster();
+	file->sf.first_clus_hi = get_hi(clus);
+	file->sf.first_clus_lo = get_lo(clus);
+	file->sf.file_size = 0;
+	modify_all_fats(clus, END_OF_CHAIN);
+	return 0;
+}
+
+int create_file(char *file_name, unsigned int directory_clus) {
+	unsigned int clus, offset;
+	union directory_entry file;
+	create_directory_entry(file_name, directory_clus, &file, &clus, &offset);
+	file.sf.attr = 0x00;
+	set_directory_entry(&file, clus, offset);
+	return 1;
+}
+
+int create_directory(char *dir_name, unsigned int directory_clus) {
 	return 1;
 }

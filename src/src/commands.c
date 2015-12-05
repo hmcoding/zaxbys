@@ -67,54 +67,19 @@ int my_close(char **cmd_args) {
 }
 
 int my_create(char **cmd_args) {
-	char *file_name;
-	file_name = cmd_args[1];
-	if (file_name == NULL) {
-		error_specify_file("create");                
-	}else{
-		create_file(file_name,0);
-	}
-return 1;
-}
-
-
-int create_file(char *file_name, int directory){
-	unsigned int clus,i,period_found = 0,file_found;
+	int found;
 	union directory_entry file;
-	char eoc[] = {0x0F,0xFF,0xFF,0xF8};
-	file_found = find_file(file_name, cur_dir_clus, &file, NULL, NULL);
-		if (!file_found){
-			find_open_directory_entry(cur_dir_clus,&file);
-			for (i=0;i<11;++i){
-				if (file_name[i] == '\0'){
-					break;
-				}else if(file_name[i] == '.'){
-					while(i < 8)
-						file.sf.name[i++] = ' ';
-					i = 7;
-					period_found = 1;
-				}else if((i > 7) && (period_found == 0)){
-				}else{
-					file.sf.name[i] = toupper(file_name[i]);
-				}
-			}
-			if (directory)
-				 file.sf.attr = 0x10;
-			else
-				 file.sf.attr = 0x00;
-			file.sf.crt_time = file.sf.wrt_time = get_time();
-			file.sf.crt_date = file.sf.wrt_date = file.sf.last_acc_date = get_date();
-			clus = find_open_cluster(); 
-			write_chars(eoc,get_fat_cluster_position(clus,0),4);
-			write_chars(eoc,get_fat_cluster_position(clus,1),4);
-			file.sf.first_clus_hi = get_hi(clus);
-			file.sf.first_clus_lo = get_lo(clus);
+	unsigned int dir_clus, offset;
+	if (cmd_args[1] == NULL) {
+		error_specify_file(cmd_args[0]);
+	} else {
+		found = find_file(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset);
+		if (found) {
+			error_file_or_directory_exists(cmd_args[1]);
+		} else {
+			create_file(cmd_args[1], cur_dir_clus);
 		}
-		else {
-			error_used_file(file_name);
-			return 0;
-		}
-	
+	}
 	return 0;
 }
 

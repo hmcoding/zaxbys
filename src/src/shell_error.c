@@ -85,3 +85,7 @@ void error_bad_directory(char *filename) {
 void error_not_empty(char *directory) {
 	printf("Error: %s: directory not empty\n", directory);
 }
+
+void error_file_or_directory_exists(char *filename) {
+	printf("Error: %s: file or directory exists already\n", filename);
+}

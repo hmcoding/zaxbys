@@ -30,5 +30,6 @@ void error_beyond_EOF(unsigned int position, unsigned int size, unsigned int fil
 
 void error_bad_directory(char *filename);
 void error_not_empty(char *directory);
+void error_file_or_directory_exists(char *filename);
 
 #endif

@@ -15,6 +15,7 @@ FILE *fat32_img;
 struct fat32_info img_info;
 unsigned int first_data_sec;
 unsigned int first_root_sec;
+unsigned int count_of_clusters;
 
 
 int read_chars(void *ptr, long pos, size_t nmemb) {
@@ -360,48 +361,86 @@ unsigned short get_date(void){
 	return d;
 }
 
-unsigned int find_open_cluster()
-{
-	unsigned long clus;	//cluster data
+unsigned int find_open_cluster() {
+	unsigned int value;	//cluster data
 	unsigned int found = 1;	//free space found
 	unsigned int i;			//counter
-
-	
-	for (i = 2;i<0xFFF5;++i) { 
-		clus = get_fat_cluster_position(i,0);
-		if (clus == 0){
+	for (i = 2; i < count_of_clusters; ++i) {
+		value = get_next_cluster_in_fat(i);
+		if (value == 0){
 			found = 0;
 			break;
 		}
 	}
 	if (found == 1){
 		error_no_more_space();
-		return 0;	 		 
+		return 0;
 	}
- return i;
+	return i;
 }
 
-unsigned int find_open_directory_entry(unsigned int directory_clus,union directory_entry *ptr){
-	unsigned int current_clus, i, limit;
+unsigned int find_open_directory_entry(unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr) {
+	unsigned int current_clus, i, limit, found;
 	union directory_entry file;
 	current_clus = directory_clus;
 	limit = img_info.bytes_per_sec*img_info.sec_per_clus/32;
+	found = 0;
 	do {
 		for (i = 0; i < limit; ++i) {
 			get_directory_entry(&file, current_clus, i);
 			if (file.raw_bytes[0] == 0x00) {
-				return 0;
+				set_next_entry_to_null(current_clus, i);
+				*ptr = file;
+				found = 1;
+				break;
 			} else if (file.raw_bytes[0] == 0xE5) {
 				*ptr = file;
-				return 1;
+				found = 1;
+				break;
 			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
 				continue;
 			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
 				continue;
 			}
 		}
+		if (found) {
+			if (clus_ptr != NULL) {
+				*clus_ptr = current_clus;
+			}
+			if (offset_ptr != NULL) {
+				*offset_ptr = i;
+			}
+		}
 		current_clus = get_next_cluster_in_fat(current_clus);
 	} while (!end_of_chain(current_clus));
-return 0;
+	return 0;
 }
 
+int set_next_entry_to_null(unsigned int directory_clus, unsigned int entry_num) {
+	union directory_entry file;
+	unsigned int first_dir_clus, entry_first_byte_offset, next_num;
+	next_num = entry_num + 1;
+	if ((entry_first_byte_offset = 32*next_num) >= img_info.bytes_per_sec*img_info.sec_per_clus) {
+		if (end_of_chain(get_next_cluster_in_fat(directory_clus))) {
+			expand_cluster(directory_clus);
+		}
+		first_dir_clus = get_first_sector_of_cluster(get_next_cluster_in_fat(directory_clus));
+		entry_first_byte_offset -= img_info.bytes_per_sec*img_info.sec_per_clus;
+	} else {
+		first_dir_clus = get_first_sector_of_cluster(directory_clus);
+	}
+	read_chars(&file, entry_first_byte_offset + first_dir_clus*img_info.bytes_per_sec, sizeof(union directory_entry));
+	file.raw_bytes[0] = 0x00;
+	write_chars(&file, entry_first_byte_offset + first_dir_clus*img_info.bytes_per_sec, sizeof(union directory_entry));
+	return 1;
+}
+
+int expand_cluster(unsigned int old_clus) {
+	unsigned int new_clus;
+	new_clus = find_open_cluster();
+	if (new_clus != 0) {
+		modify_all_fats(old_clus, new_clus);
+		modify_all_fats(new_clus, END_OF_CHAIN);
+	}
+	return 1;
+}

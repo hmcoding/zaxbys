@@ -27,6 +27,7 @@ extern unsigned int current_directory_capacity;
 extern unsigned int cur_dir_clus;
 extern unsigned int cur_dir_sec;
 extern struct list *opened_files;
+extern unsigned int count_of_clusters;
 
 // setup functions
 int setup(char *img_filename, char *exe_name);

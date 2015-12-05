@@ -43,7 +43,9 @@ int empty_directory(union directory_entry *dir);
 unsigned short get_time(void);
 unsigned short int get_date(void);
 
-unsigned int find_open_cluster();
-unsigned int find_open_directory_entry(unsigned int directory_clus,union directory_entry *ptr);
+unsigned int find_open_cluster(void);
+unsigned int find_open_directory_entry(unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr);
 
+int set_next_entry_to_null(unsigned int directory_clus, unsigned int entry_num);
+int expand_cluster(unsigned int old_clus);
 #endif
