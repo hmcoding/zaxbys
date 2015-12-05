@@ -25,8 +25,11 @@ void error_cd_not_here(char *directory);
 
 // set of read/write errors
 void error_specify_file_pos_size(char *command);
+void error_specify_file_pos_size_str(char *command);
 void error_not_readable(char *filename);
 void error_beyond_EOF(unsigned int position, unsigned int size, unsigned int file_size);
+void error_not_writeable(char *filename);
+void error_too_large(unsigned int position, unsigned int size);
 
 void error_bad_directory(char *filename);
 void error_not_empty(char *directory);

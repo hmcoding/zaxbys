@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <limits.h>
+#include <string.h>
 
 #include "setup.h"
 #include "file_types.h"
@@ -165,6 +167,45 @@ int my_read(char **cmd_args) {
 }
 
 int my_write(char **cmd_args) {
+	int found;
+	union directory_entry file;
+	char *filename, *str;
+	unsigned int file_clus, position, size, dir_clus, offset, str_length, given_size;
+	struct node *file_ptr;
+	if (cmd_args[1] == NULL || cmd_args[2] == NULL || cmd_args[3] == NULL || cmd_args[4] == NULL) {
+		error_specify_file_pos_size_str(cmd_args[0]);
+	} else {
+		filename = cmd_args[1];
+		str = cmd_args[4];
+		position = strtoul(cmd_args[2], NULL, 10);
+		str_length = strlen(str);
+		given_size = strtoul(cmd_args[3], NULL, 10);
+		if (str_length > given_size) {
+			size = given_size;
+		} else {
+			size = str_length;
+		}
+		found = find_file(filename, cur_dir_clus, &file, &dir_clus, &offset);
+		if (!found) {
+			error_open_no_file(filename);
+		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+			error_close_directory(filename);
+		} else {
+			file_clus = get_file_cluster(&file);
+			file_ptr = opened_files->find(opened_files, file_clus);
+			if (file_ptr == NULL) {
+				error_not_open(filename);
+			} else if (!check_write(file_ptr)) {
+				error_not_writeable(filename);
+			} else if (position > UINT_MAX - size) {
+				error_too_large(position, size);
+			} else {
+				write_file(&file, position, size, str);
+				file.sf.last_acc_date = get_time();
+				set_directory_entry(&file, dir_clus, offset);
+			}
+		}
+	}
 	return 0;
 }
 

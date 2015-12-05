@@ -73,7 +73,7 @@ char **parse_arguments(char *cmd_line) {
 		cmd_args[i] = (char *)malloc(offset + 1);
 		strncpy(cmd_args[i], &tmp_line[position], offset);
 		cmd_args[i++][offset] = '\0';
-		if (tmp_line[offset + 1] == '\"') {
+		if (tmp_line[position + offset + 1] == '\"') {
 			position += offset + 2;
 			offset = strcspn(&tmp_line[position], "\"");
 			cmd_args[i] = (char *)malloc(offset + 1);

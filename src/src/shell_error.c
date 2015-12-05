@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <limits.h>
 
 #include "shell_error.h"
 //parsing errors
@@ -70,6 +71,10 @@ void error_specify_file_pos_size(char *command) {
 	printf("Error: %s: please specify a file name, position, and size\n", command);
 }
 
+void error_specify_file_pos_size_str(char *command) {
+	printf("Error: %s: please specify a file name, position, size, and string\n", command);
+}
+
 void error_not_readable(char *filename) {
 	printf("Error: %s: this file is not open in read mode\n", filename);
 }
@@ -78,6 +83,16 @@ void error_beyond_EOF(unsigned int position, unsigned int size, unsigned int fil
 	printf("Error: %u + %u > %u: attempt to read beyond EOF\n", position, size, file_size);
 }
 
+void error_not_writeable(char *filename) {
+	printf("Error: %s: File is not open for writing\n", filename);
+}
+
+void error_too_large(unsigned int position, unsigned int size) {
+	printf("Error: %u + %u > %u: attempt to make file too large\n", position, size, UINT_MAX);
+}
+
+
+// other
 void error_bad_directory(char *filename) {
 	printf("Error: %s: not a directory\n", filename);
 }

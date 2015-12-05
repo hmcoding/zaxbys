@@ -225,6 +225,50 @@ int read_file(union directory_entry *file, unsigned int position, unsigned int s
 	return 1;
 }
 
+int write_file(union directory_entry *file, unsigned int position, unsigned int size, char *str) {
+	unsigned int offset, bytes_left, cur_clus, bytes_per_clus, byte_position, nmemb, start;
+	bytes_per_clus = img_info.bytes_per_sec*img_info.sec_per_clus;
+	offset = position;
+	bytes_left = size;
+	start = 0;
+	cur_clus = get_file_cluster(file);
+	while (offset > bytes_per_clus) {
+		cur_clus = get_next_cluster_in_fat(cur_clus);
+		if (end_of_chain(cur_clus)) {
+			expand_cluster(cur_clus);
+		}
+		offset -= bytes_per_clus;
+	}
+	byte_position = img_info.bytes_per_sec*get_first_sector_of_cluster(cur_clus) + offset;
+	if (bytes_left > bytes_per_clus - offset) {
+		nmemb = bytes_per_clus - offset;
+	} else {
+		nmemb = bytes_left;
+	}
+	write_chars(&str[start], byte_position, nmemb);
+	bytes_left -= nmemb;
+	start += nmemb;
+	while (bytes_left > 0) {
+		cur_clus = get_next_cluster_in_fat(cur_clus);
+		if (end_of_chain(cur_clus)) {
+			expand_cluster(cur_clus);
+		}
+		byte_position = img_info.bytes_per_sec*get_first_sector_of_cluster(cur_clus);
+		if (bytes_left < bytes_per_clus) {
+			nmemb = bytes_left;
+		} else {
+			nmemb = bytes_per_clus;
+		}
+		write_chars(&str[start], byte_position, nmemb);
+		bytes_left -= nmemb;
+		start += nmemb;
+	}
+	if (position + size > file->sf.file_size) {
+		file->sf.file_size = position + size;
+	}
+	return 1;
+}
+
 int delete_file(union directory_entry *file_ptr, unsigned int directory_clus, unsigned int entry_num) {
 	union directory_entry next_file;
 	struct list *clusters;
