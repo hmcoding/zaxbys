@@ -31,10 +31,10 @@ extern unsigned int count_of_clusters;
 
 // setup functions
 int setup(char *img_filename, char *exe_name);
-int extract_fat32_info(void);
-int set_root_directory(void);
-int set_open_list(void);
-void print_prompt(void);
-void print_introduction(char *img_filename, char *exe_name);
+int getFatInfo(void);
+int setRootDir(void);
+int setOpened(void);
+void displayPrompt(void);
+void displayIntro(char *img_filename, char *exe_name);
 
 #endif
