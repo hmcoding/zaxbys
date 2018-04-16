@@ -6,46 +6,46 @@
 #define NEXT_CLUS_MASK 0x0FFFFFFF
 
 // forward declaration of type from another header file
-union directory_entry;
+union dirEntry;
 
-int read_chars(void *ptr, long pos, size_t nmemb);
-int write_chars(void *ptr, long pos, size_t nmemb);
+int rChar(void *ptr, long pos, size_t nmemb);
+int wChar(void *ptr, long pos, size_t nmemb);
 
-unsigned short get_lo(unsigned int clus);
-unsigned short get_hi(unsigned int clus);
+unsigned short retLoVal(unsigned int clus);
+unsigned short retHiVal(unsigned int clus);
 
 
-unsigned int *read_uint(unsigned int *ptr, long pos);
-unsigned int *write_uint(unsigned int *ptr, long pos);
-unsigned short *read_ushort(unsigned short *ptr, long pos);
-unsigned short *write_ushort(unsigned short *ptr, long pos);
-unsigned char *read_uchar(unsigned char *ptr, long pos);
-unsigned int swap_32(unsigned int val);
-unsigned short swap_16(unsigned short val);
+unsigned int *readUnInt(unsigned int *ptr, long pos);
+unsigned int *writeUnInt(unsigned int *ptr, long pos);
+unsigned short *readUnSh(unsigned short *ptr, long pos);
+unsigned short *writeUnSh(unsigned short *ptr, long pos);
+unsigned char *readUnCh(unsigned char *ptr, long pos);
+unsigned int switch32(unsigned int val);
+unsigned short switch16(unsigned short val);
 
 int check_endian(void);
 
-unsigned int get_first_sector_of_cluster(unsigned int clus);
-unsigned long get_fat_cluster_position(unsigned int clus, unsigned int fat);
-unsigned int get_next_cluster_in_fat(unsigned int clus);
-unsigned int get_next_cluster_in_fat_true(unsigned int clus);
-int end_of_chain(unsigned int clus);
-int modify_all_fats(unsigned int file_clus, unsigned int value);
+unsigned int retSecClus(unsigned int clus);
+unsigned long retFatClusPos(unsigned int clus, unsigned int fat);
+unsigned int retFatNextClus(unsigned int clus);
+unsigned int retFatNextClus_true(unsigned int clus);
+int chainEnd(unsigned int clus);
+int changeFats(unsigned int file_clus, unsigned int value);
 
-int short_to_lowercase(char filename[12], char short_name[11]);
-int filename_to_short(char filename[12], char short_name[11]);
-int find_file(char *filename, unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr);
-unsigned int get_file_cluster(union directory_entry *ptr);
-unsigned short get_hi(unsigned int clus);
-unsigned short get_lo(unsigned int clus);
-int empty_directory(union directory_entry *dir);
+int shortLow(char filename[12], char short_name[11]);
+int fileShort(char filename[12], char short_name[11]);
+int lookupFile(char *filename, unsigned int directory_clus, union dirEntry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr);
+unsigned int retFileClus(union dirEntry *ptr);
+unsigned short retHiVal(unsigned int clus);
+unsigned short retLoVal(unsigned int clus);
+int emptyDir(union dirEntry *dir);
 
-unsigned short get_time(void);
-unsigned short int get_date(void);
+unsigned short retTime(void);
+unsigned short int retDate(void);
 
-unsigned int find_open_cluster(void);
-unsigned int find_open_directory_entry(unsigned int directory_clus, union directory_entry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr);
+unsigned int lookupOpenClus(void);
+unsigned int lookupOpenDirEntry(unsigned int directory_clus, union dirEntry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr);
 
-int set_next_entry_to_null(unsigned int directory_clus, unsigned int entry_num);
-int expand_cluster(unsigned int old_clus);
+int setEntryNull(unsigned int directory_clus, unsigned int entry_num);
+int expClus(unsigned int old_clus);
 #endif
