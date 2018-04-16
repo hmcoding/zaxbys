@@ -18,7 +18,7 @@
 #define EMPTY_FILE				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} 
 
 
-struct short_file {
+struct fileShort {
 	char name[11];
 	unsigned char attr;
 	unsigned char ntr;
@@ -33,7 +33,7 @@ struct short_file {
 	unsigned int file_size;
 };
 
-struct long_file {
+struct fileLong {
 	unsigned char ord;
 	char name1[10];
 	unsigned char attr;
@@ -44,10 +44,10 @@ struct long_file {
 	char name3[4];
 };
 
-union directory_entry {
+union dirEntry {
 	unsigned char raw_bytes[32];
-	struct short_file sf;
-	struct long_file lf;
+	struct fileShort sf;
+	struct fileLong lf;
 };
 
 // singlely-linked list definition
@@ -68,31 +68,31 @@ struct list {
 	unsigned int size;
 };
 
-struct list *create_list(void);
-void delete_list(struct list *old_list);
+struct list *makeList(void);
+void delList(struct list *old_list);
 
-void list_clear(struct list *m_list);
-int list_add(struct list *m_list, unsigned int file_clus, char *mode);
-int list_remove(struct list *m_list, unsigned int file_clus);
-struct node *list_find(struct list *m_list, unsigned int file_clus);
-struct node *list_get_head(struct list *m_list);
-int list_empty(struct list *m_list);
-unsigned char file_mode_to_byte(char *mode);
-int check_read(struct node *file);
-int check_write(struct node *file);
-unsigned int get_size(union directory_entry *file);
+void clearList(struct list *m_list);
+int addList(struct list *m_list, unsigned int file_clus, char *mode);
+int remList(struct list *m_list, unsigned int file_clus);
+struct node *lookList(struct list *m_list, unsigned int file_clus);
+struct node *headList(struct list *m_list);
+int emptyList(struct list *m_list);
+unsigned char toByte(char *mode);
+int readCheck(struct node *file);
+int writeCheck(struct node *file);
+unsigned int retSize(union dirEntry *file);
 
-int get_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
-int set_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
-int get_next_directory_entry(union directory_entry *ptr, unsigned int directory_clus, unsigned int entry_num);
-int read_file(union directory_entry *file, unsigned int position, unsigned int size);
-int write_file(union directory_entry *file, unsigned int position, unsigned int size, char *str);
-int delete_file(union directory_entry *file, unsigned int directory_clus, unsigned int entry_num);
-int delete_cluster(unsigned int file_clus);
+int retDirEntry(union dirEntry *ptr, unsigned int directory_clus, unsigned int entry_num);
+int setDirEntry(union dirEntry *ptr, unsigned int directory_clus, unsigned int entry_num);
+int retNextDirEntry(union dirEntry *ptr, unsigned int directory_clus, unsigned int entry_num);
+int fileR(union dirEntry *file, unsigned int position, unsigned int size);
+int fileW(union dirEntry *file, unsigned int position, unsigned int size, char *str);
+int fileDel(union dirEntry *file, unsigned int directory_clus, unsigned int entry_num);
+int clustDel(unsigned int file_clus);
 
-int create_directory_entry(char *file_name, unsigned int directory_clus, union directory_entry *file, unsigned int *clus_ptr, unsigned int *offset_ptr, int find_new_clus);
-int create_file(char *file_name, unsigned int directory_clus);
-int create_directory(char *dir_name, unsigned int directory_clus);
+int makeDirEntry(char *file_name, unsigned int directory_clus, union dirEntry *file, unsigned int *clus_ptr, unsigned int *offset_ptr, int find_new_clus);
+int makeFile(char *file_name, unsigned int directory_clus);
+int makeDir(char *dir_name, unsigned int directory_clus);
 
 
 #endif
