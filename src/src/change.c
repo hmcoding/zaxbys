@@ -18,19 +18,22 @@
 #include "tools.h"
 #include "shell_error.h"
 
+
+
+
 // VARIABLES FOR ALL FILES
 
-FILE *fat32_img;
-struct list *opened_files;
-struct fat32_info img_info;
-unsigned int cur_dir_clus;
-char *current_directory;
-unsigned int current_directory_capacity;
-int endianness;
-unsigned int first_data_sec;
-unsigned int cur_dir_sec;
-unsigned int first_root_sec;
-unsigned int count_of_clusters;
+FILE *fatImage;
+struct list *theOpen;
+struct fatData imageData;
+unsigned int thisDirClus;
+char *thisDir;
+unsigned int thisDirCap;
+int endianVar;
+unsigned int dataSec;
+unsigned int thisDirSec;
+unsigned int rootSec;
+unsigned int numClus;
 
 
 
@@ -41,15 +44,15 @@ unsigned int count_of_clusters;
 
 
 
-void loopClean(char *cmd_line, char **cmd_args) {
-	ridCmdLine(cmd_line);
-	ridCmdArgs(cmd_args);
+void loopClean(char *progLine, char **progArgs) {
+	ridCmdLine(progLine);
+	ridCmdArgs(progArgs);
 }
 
 void globClean(void) {
-	delList(opened_files);
-	free(current_directory);
-	fclose(fat32_img);
+	delList(theOpen);
+	free(thisDir);
+	fclose(fatImage);
 }
 // END CLEAN
 
@@ -58,15 +61,15 @@ void globClean(void) {
 
 
 
-int cdCmd(char **cmd_args) {
+int cdCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
-	if (cmd_args[1] != NULL) {
-		check = lookupFile(cmd_args[1], cur_dir_clus, &file, NULL, NULL);
+	if (progArgs[1] != NULL) {
+		check = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
 		if (!check) {
-			error_cd_not_here(cmd_args[1]);
+			error_cd_not_here(progArgs[1]);
 		} else if((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
-			error_cd_file(cmd_args[1]);
+			error_cd_file(progArgs[1]);
 		} else { // it's a directory
 			changeDirClus(&file);
 			changeCurDir(&file);
@@ -75,152 +78,152 @@ int cdCmd(char **cmd_args) {
 	return 0;
 }
 
-/* prints the entries in the given directory in cmd_args[1]
+/* prints the entries in the given directory in progArgs[1]
  */
-int lsCmd(char **cmd_args) {
+int lsCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
-	unsigned int dir_clus;
-	if (cmd_args[1] == NULL) {
-		dir_clus = cur_dir_clus;
+	unsigned int DirClus;
+	if (progArgs[1] == NULL) {
+		DirClus = thisDirClus;
 	} else {
-		check = lookupFile(cmd_args[1], cur_dir_clus, &file, NULL, NULL);
+		check = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
 		if (!check) {
-			error_cd_not_here(cmd_args[1]);
+			error_cd_not_here(progArgs[1]);
 			return 0;
 		} else if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
-			error_cd_file(cmd_args[1]);
+			error_cd_file(progArgs[1]);
 			return 0;
 		} else {
-			dir_clus = retFileClus(&file);
+			DirClus = retFileClus(&file);
 		}
 	}
-	displayDir(dir_clus);
+	displayDir(DirClus);
 	printf("\n");
 	return 0;
 }
 
-int mkdirCmd(char **cmd_args) {
+int mkdirCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
-	unsigned int dir_clus, offset;
-	if (cmd_args[1] == NULL) {
-		error_specify_file(cmd_args[0]);
+	unsigned int DirClus, offset;
+	if (progArgs[1] == NULL) {
+		error_specify_file(progArgs[0]);
 	} else {
-		check = lookupFile(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset);
+		check = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (check) {
-			error_file_or_directory_exists(cmd_args[1]);
+			error_file_or_directory_exists(progArgs[1]);
 		} else {
-			makeDir(cmd_args[1], cur_dir_clus);
+			makeDir(progArgs[1], thisDirClus);
 		}
 	}
 	return 0;
 }
 
-int rmdirCmd(char **cmd_args) {
+int rmdirCmd(char **progArgs) {
 	int check;
-	char *file_name;
+	char *nameFile;
 	union dirEntry file;
-	unsigned int dir_clus, offset;
-	file_name = cmd_args[1];
-	if (file_name == NULL) {
-		error_specify_directory(cmd_args[0]);                
+	unsigned int DirClus, offset;
+	nameFile = progArgs[1];
+	if (nameFile == NULL) {
+		error_specify_directory(progArgs[0]);                
 	} else {
-		check = lookupFile(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset);
+		check = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (!check) {
-			error_open_no_file(cmd_args[1]);
+			error_open_no_file(progArgs[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
-			error_bad_directory(cmd_args[1]);
+			error_bad_directory(progArgs[1]);
 		} else if (!emptyDir(&file)) {
-			error_not_empty(cmd_args[1]);
+			error_not_empty(progArgs[1]);
 		} else {
-			fileDel(&file, dir_clus, offset);
+			fileDel(&file, DirClus, offset);
 		}
 	}
 	return 0;
 }
 
-int displayDir(unsigned int directory_clus) {
-	unsigned int current_clus, i, limit, done;
+int displayDir(unsigned int dirClus) {
+	unsigned int thisClus, i, bound, finish;
 	union dirEntry file;
-	char filename[12];
-	current_clus = directory_clus;
-	limit = img_info.bytes_per_sec*img_info.sec_per_clus/32;
-	done = 0;
+	char fNames[12];
+	thisClus = dirClus;
+	bound = imageData.bytes_per_sec*imageData.sec_per_clus/32;
+	finish = 0;
 	do {
-		for (i = 0; i < limit; ++i) {
-			retDirEntry(&file, current_clus, i);
+		for (i = 0; i < bound; ++i) {
+			retDirEntry(&file, thisClus, i);
 			if (file.raw_bytes[0] == 0x00) {
-				done = 1;
+				finish = 1;
 				break;
 			} else if (file.raw_bytes[0] == 0xE5) {
 				continue;
 			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
 				continue;
 			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == 0x00) {
-				shortLow(filename, file.sf.name);
-				printf("%s\t", filename);
+				shortLow(fNames, file.sf.name);
+				printf("%s\t", fNames);
 			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_DIRECTORY) {
-				shortLow(filename, file.sf.name);
-				printf("%s/\t", filename);
+				shortLow(fNames, file.sf.name);
+				printf("%s/\t", fNames);
 			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
 				continue;
 			} else {
 				// bad file
 			}
 		}
-		current_clus = retFatNextClus(current_clus);
-	} while (!chainEnd(current_clus) && !done);
+		thisClus = retFatNextClus(thisClus);
+	} while (!chainEnd(thisClus) && !finish);
 	return 1;
 }
 
 int changeDirClus(union dirEntry *ptr) {
-	unsigned int file_clus;
+	unsigned int fileClus;
 	if ((ptr->sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-		file_clus = retFileClus(ptr);
-		if (file_clus == 0) {
-			cur_dir_clus = img_info.root_clus;
+		fileClus = retFileClus(ptr);
+		if (fileClus == 0) {
+			thisDirClus = imageData.root_clus;
 		} else {
-			cur_dir_clus = file_clus;
+			thisDirClus = fileClus;
 		}
 	}
 	return 1;
 }
 
 int changeCurDir(union dirEntry *ptr) {
-	char filename[12];
-	unsigned int pen_slash;
+	char fNames[12];
+	unsigned int slashNTL;
 	if ((ptr->sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-		shortLow(filename, ptr->sf.name);
+		shortLow(fNames, ptr->sf.name);
 		if (retFileClus(ptr) == 0) {
-			strcpy(current_directory, "/");
-		} else if (strcmp(filename, ".") == 0) {
+			strcpy(thisDir, "/");
+		} else if (strcmp(fNames, ".") == 0) {
 			// do nothing
-		} else if (strcmp(filename, "..") == 0) {
-			pen_slash = find_penultimate_slash();
-			current_directory[pen_slash + 1] = '\0';
+		} else if (strcmp(fNames, "..") == 0) {
+			slashNTL = lookupNextToLastSlash();
+			thisDir[slashNTL + 1] = '\0';
 		} else {
-			if (strlen(current_directory) + strlen(filename) + 1 > current_directory_capacity) {
-				current_directory_capacity *= 2;
-				current_directory = realloc(current_directory, current_directory_capacity);
+			if (strlen(thisDir) + strlen(fNames) + 1 > thisDirCap) {
+				thisDirCap *= 2;
+				thisDir = realloc(thisDir, thisDirCap);
 			}
-			strcat(current_directory, filename);
-			strcat(current_directory, "/");
+			strcat(thisDir, fNames);
+			strcat(thisDir, "/");
 		}
 	}
 	return 1;
 }
 
-unsigned int find_penultimate_slash() {
-	unsigned int ultimate, penultimate, i;
-	ultimate = 0, penultimate = 0;
-	for (i = 1; current_directory[i] != '\0'; ++i) {
-		if (current_directory[i] == '/') {
-			penultimate = ultimate;
-			ultimate = i;
+unsigned int lookupNextToLastSlash() {
+	unsigned int lastSlash, ntlSlash, i;
+	lastSlash = 0, ntlSlash = 0;
+	for (i = 1; thisDir[i] != '\0'; ++i) {
+		if (thisDir[i] == '/') {
+			ntlSlash = lastSlash;
+			lastSlash = i;
 		}
 	}
-	return penultimate;
+	return ntlSlash;
 }
 
 // END DIRECTORY
@@ -230,37 +233,37 @@ unsigned int find_penultimate_slash() {
 /* userCmd
  *
  */
-int userCmd(char **cmd_args) {
-	if (cmd_args[0] == NULL) {
+int userCmd(char **progArgs) {
+	if (progArgs[0] == NULL) {
 		// do nothing
-	} else if (strcmp(cmd_args[0], "open") == 0) {
-		openCmd(cmd_args);
-	} else if (strcmp(cmd_args[0], "close") == 0) {
-		closeCmd(cmd_args);
-	} else if (strcmp(cmd_args[0], "create") == 0) {
-		createCmd(cmd_args);
-	} else if (strcmp(cmd_args[0], "rm") == 0) {
-		rmCmd(cmd_args);
-	} else if (strcmp(cmd_args[0], "size") == 0) {
-		sizeCmd(cmd_args);
-	} else if (strcmp(cmd_args[0], "cd") == 0) {
-		cdCmd(cmd_args);
-	} else if (strcmp(cmd_args[0], "ls") == 0) {
-		lsCmd(cmd_args);
-	} else if (strcmp(cmd_args[0], "mkdir") == 0) {
-		mkdirCmd(cmd_args);
-	} else if (strcmp(cmd_args[0], "rmdir") == 0) {
-		rmdirCmd(cmd_args);
-	} else if (strcmp(cmd_args[0], "read") == 0) {
-		readCmd(cmd_args);
-	} else if (strcmp(cmd_args[0], "write") == 0) {
-		writeCmd(cmd_args);
-	} else if (strcmp(cmd_args[0], "exit") == 0) {
+	} else if (strcmp(progArgs[0], "open") == 0) {
+		openCmd(progArgs);
+	} else if (strcmp(progArgs[0], "close") == 0) {
+		closeCmd(progArgs);
+	} else if (strcmp(progArgs[0], "create") == 0) {
+		createCmd(progArgs);
+	} else if (strcmp(progArgs[0], "rm") == 0) {
+		rmCmd(progArgs);
+	} else if (strcmp(progArgs[0], "size") == 0) {
+		sizeCmd(progArgs);
+	} else if (strcmp(progArgs[0], "cd") == 0) {
+		cdCmd(progArgs);
+	} else if (strcmp(progArgs[0], "ls") == 0) {
+		lsCmd(progArgs);
+	} else if (strcmp(progArgs[0], "mkdir") == 0) {
+		mkdirCmd(progArgs);
+	} else if (strcmp(progArgs[0], "rmdir") == 0) {
+		rmdirCmd(progArgs);
+	} else if (strcmp(progArgs[0], "read") == 0) {
+		readCmd(progArgs);
+	} else if (strcmp(progArgs[0], "write") == 0) {
+		writeCmd(progArgs);
+	} else if (strcmp(progArgs[0], "exit") == 0) {
 		 return exitCmd();
-	} else if (strcmp(cmd_args[0], "info") == 0) {
+	} else if (strcmp(progArgs[0], "info") == 0) {
 		infoCmd();
 	}  else {
-		printf("command: %s: Command is not recognized\n", cmd_args[0]);
+		printf("command: %s: Command is not recognized\n", progArgs[0]);
 	}
 	return 1;
 }
@@ -275,126 +278,126 @@ int userCmd(char **cmd_args) {
 
 
 int infoCmd(){
-	printf("Bytes per Sector: %d\n", img_info.bytes_per_sec);
-	printf("Sectors per Cluster: %d\n", img_info.sec_per_clus);
-	printf("Total Sectors: %d\n",img_info.tot_sec32);
-	printf("Sectors per FAT: %d\n", img_info.fat_sz32);
-	printf("Number of FATs: %d\n", img_info.num_fat);
+	printf("Bytes per Sector: %d\n", imageData.bytes_per_sec);
+	printf("Sectors per Cluster: %d\n", imageData.sec_per_clus);
+	printf("Total Sectors: %d\n",imageData.tot_sec32);
+	printf("Sectors per FAT: %d\n", imageData.fat_sz32);
+	printf("Number of FATs: %d\n", imageData.num_fat);
 
 	return 0;
 }
 
 
 
-int openCmd(char **cmd_args) {
+int openCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
-	unsigned int file_clus, dir_clus, offset;
-	struct node *file_ptr;
-	if (cmd_args[1] == NULL || cmd_args[2] == NULL) {
-		error_specify_file_and_mode(cmd_args[0]);
+	unsigned int fileClus, DirClus, offset;
+	struct node *ptrToFile;
+	if (progArgs[1] == NULL || progArgs[2] == NULL) {
+		error_specify_file_and_mode(progArgs[0]);
 	} else {
-		check = lookupFile(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset);
+		check = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (!check) {
-			error_open_no_file(cmd_args[1]);
+			error_open_no_file(progArgs[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			error_open_directory(cmd_args[1]);
-		} else if (toByte(cmd_args[2]) == 0x0) {
-			error_open_bad_param(cmd_args[2]);
+			error_open_directory(progArgs[1]);
+		} else if (toByte(progArgs[2]) == 0x0) {
+			error_open_bad_param(progArgs[2]);
 		} else {
-			file_clus = retFileClus(&file);
-			file_ptr = opened_files->find(opened_files, file_clus);
-			if (file_ptr != NULL) {
-				error_open_already(cmd_args[1]);
+			fileClus = retFileClus(&file);
+			ptrToFile = theOpen->find(theOpen, fileClus);
+			if (ptrToFile != NULL) {
+				error_open_already(progArgs[1]);
 			} else {
 				file.sf.last_acc_date = retDate();
-				setDirEntry(&file, dir_clus, offset);
-				opened_files->add(opened_files, retFileClus(&file), cmd_args[2]);
+				setDirEntry(&file, DirClus, offset);
+				theOpen->add(theOpen, retFileClus(&file), progArgs[2]);
 			}
 		}
 	}
 	return 0;
 }
 
-int closeCmd(char **cmd_args) {
+int closeCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
-	unsigned int file_clus;
-	struct node *file_ptr;
-	if (cmd_args[1] == NULL) {
-		error_specify_file(cmd_args[0]);
+	unsigned int fileClus;
+	struct node *ptrToFile;
+	if (progArgs[1] == NULL) {
+		error_specify_file(progArgs[0]);
 	} else {
-		check = lookupFile(cmd_args[1], cur_dir_clus, &file, NULL, NULL);
+		check = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
 		if (!check) {
-			error_open_no_file(cmd_args[1]);
+			error_open_no_file(progArgs[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			error_close_directory(cmd_args[1]);
+			error_close_directory(progArgs[1]);
 		} else {
-			file_clus = retFileClus(&file);
-			file_ptr = opened_files->find(opened_files, file_clus);
-			if (file_ptr == NULL) {
-				error_not_open(cmd_args[1]);
+			fileClus = retFileClus(&file);
+			ptrToFile = theOpen->find(theOpen, fileClus);
+			if (ptrToFile == NULL) {
+				error_not_open(progArgs[1]);
 			} else {
-				opened_files->remove(opened_files, file_clus);
+				theOpen->remove(theOpen, fileClus);
 			}
 		}
 	}
 	return 0;
 }
 
-int createCmd(char **cmd_args) {
+int createCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
-	unsigned int dir_clus, offset;
-	if (cmd_args[1] == NULL) {
-		error_specify_file(cmd_args[0]);
+	unsigned int DirClus, offset;
+	if (progArgs[1] == NULL) {
+		error_specify_file(progArgs[0]);
 	} else {
-		check = lookupFile(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset);
+		check = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (check) {
-			error_file_or_directory_exists(cmd_args[1]);
+			error_file_or_directory_exists(progArgs[1]);
 		} else {
-			makeFile(cmd_args[1], cur_dir_clus);
+			makeFile(progArgs[1], thisDirClus);
 		}
 	}
 	return 0;
 }
 
-int rmCmd(char **cmd_args) {
+int rmCmd(char **progArgs) {
 	int check;
-	char *file_name;
+	char *nameFile;
 	union dirEntry file;
-	unsigned int file_clus, dir_clus, offset;
-	struct node *file_ptr;
-	file_name = cmd_args[1];
-	if (file_name == NULL) {
-		error_specify_file(cmd_args[0]);                
+	unsigned int fileClus, DirClus, offset;
+	struct node *ptrToFile;
+	nameFile = progArgs[1];
+	if (nameFile == NULL) {
+		error_specify_file(progArgs[0]);                
 	} else {
-		check = lookupFile(cmd_args[1], cur_dir_clus, &file, &dir_clus, &offset);
+		check = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (!check) {
-			error_open_no_file(cmd_args[1]);
+			error_open_no_file(progArgs[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			error_remove_directory(cmd_args[1]);
+			error_remove_directory(progArgs[1]);
 		} else {
-			file_clus = retFileClus(&file);
-			file_ptr = opened_files->find(opened_files, file_clus);
-			if (file_ptr != NULL) {
-				opened_files->remove(opened_files, file_clus);
+			fileClus = retFileClus(&file);
+			ptrToFile = theOpen->find(theOpen, fileClus);
+			if (ptrToFile != NULL) {
+				theOpen->remove(theOpen, fileClus);
 			}
-			fileDel(&file, dir_clus, offset);
+			fileDel(&file, DirClus, offset);
 		}
 	}
 	return 0;
 }
 
-int sizeCmd(char **cmd_args) {
+int sizeCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
-	if (cmd_args[1] == NULL) {
-		error_specify_file(cmd_args[0]);
+	if (progArgs[1] == NULL) {
+		error_specify_file(progArgs[0]);
 	} else {
-		check = lookupFile(cmd_args[1], cur_dir_clus, &file, NULL, NULL);
+		check = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
 		if (!check) {
-			error_open_no_file(cmd_args[1]);
+			error_open_no_file(progArgs[1]);
 		} else {
 			printf("%u\n", retSize(&file));
 		}
@@ -402,37 +405,37 @@ int sizeCmd(char **cmd_args) {
 	return 0;
 }
 
-int readCmd(char **cmd_args) {
+int readCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
-	char *filename;
-	unsigned int file_clus, position, size, file_size, dir_clus, offset;
-	struct node *file_ptr;
-	if (cmd_args[1] == NULL || cmd_args[2] == NULL || cmd_args[3] == NULL) {
-		error_specify_file_pos_size(cmd_args[0]);
+	char *fNames;
+	unsigned int fileClus, location, size, sizeFile, DirClus, offset;
+	struct node *ptrToFile;
+	if (progArgs[1] == NULL || progArgs[2] == NULL || progArgs[3] == NULL) {
+		error_specify_file_pos_size(progArgs[0]);
 	} else {
-		filename = cmd_args[1];
-		position = strtoul(cmd_args[2], NULL, 10);
-		size = strtoul(cmd_args[3], NULL, 10);
-		check = lookupFile(filename, cur_dir_clus, &file, &dir_clus, &offset);
+		fNames = progArgs[1];
+		location = strtoul(progArgs[2], NULL, 10);
+		size = strtoul(progArgs[3], NULL, 10);
+		check = lookupFile(fNames, thisDirClus, &file, &DirClus, &offset);
 		if (!check) {
-			error_open_no_file(filename);
+			error_open_no_file(fNames);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			error_close_directory(filename);
+			error_close_directory(fNames);
 		} else {
-			file_clus = retFileClus(&file);
-			file_ptr = opened_files->find(opened_files, file_clus);
-			file_size = retSize(&file);
-			if (file_ptr == NULL) {
-				error_not_open(filename);
-			} else if (!readCheck(file_ptr)) {
-				error_not_readable(filename);
-			} else if (position + size > file_size) {
-				error_beyond_EOF(position, size, file_size);
+			fileClus = retFileClus(&file);
+			ptrToFile = theOpen->find(theOpen, fileClus);
+			sizeFile = retSize(&file);
+			if (ptrToFile == NULL) {
+				error_not_open(fNames);
+			} else if (!readCheck(ptrToFile)) {
+				error_not_readable(fNames);
+			} else if (location + size > sizeFile) {
+				error_beyond_EOF(location, size, sizeFile);
 			} else {
 				file.sf.last_acc_date = retTime();
-				setDirEntry(&file, dir_clus, offset);
-				fileR(&file, position, size);
+				setDirEntry(&file, DirClus, offset);
+				fileR(&file, location, size);
 				printf("\n");
 			}
 		}
@@ -440,43 +443,43 @@ int readCmd(char **cmd_args) {
 	return 0;
 }
 
-int writeCmd(char **cmd_args) {
+int writeCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
-	char *filename, *str;
-	unsigned int file_clus, position, size, dir_clus, offset, str_length, given_size;
-	struct node *file_ptr;
-	if (cmd_args[1] == NULL || cmd_args[2] == NULL || cmd_args[3] == NULL || cmd_args[4] == NULL) {
-		error_specify_file_pos_size_str(cmd_args[0]);
+	char *fNames, *str;
+	unsigned int fileClus, location, size, DirClus, offset, lengthStr, sizeOrig;
+	struct node *ptrToFile;
+	if (progArgs[1] == NULL || progArgs[2] == NULL || progArgs[3] == NULL || progArgs[4] == NULL) {
+		error_specify_file_pos_size_str(progArgs[0]);
 	} else {
-		filename = cmd_args[1];
-		str = cmd_args[4];
-		position = strtoul(cmd_args[2], NULL, 10);
-		str_length = strlen(str);
-		given_size = strtoul(cmd_args[3], NULL, 10);
-		if (str_length > given_size) {
-			size = given_size;
+		fNames = progArgs[1];
+		str = progArgs[4];
+		location = strtoul(progArgs[2], NULL, 10);
+		lengthStr = strlen(str);
+		sizeOrig = strtoul(progArgs[3], NULL, 10);
+		if (lengthStr > sizeOrig) {
+			size = sizeOrig;
 		} else {
-			size = str_length;
+			size = lengthStr;
 		}
-		check = lookupFile(filename, cur_dir_clus, &file, &dir_clus, &offset);
+		check = lookupFile(fNames, thisDirClus, &file, &DirClus, &offset);
 		if (!check) {
-			error_open_no_file(filename);
+			error_open_no_file(fNames);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			error_close_directory(filename);
+			error_close_directory(fNames);
 		} else {
-			file_clus = retFileClus(&file);
-			file_ptr = opened_files->find(opened_files, file_clus);
-			if (file_ptr == NULL) {
-				error_not_open(filename);
-			} else if (!writeCheck(file_ptr)) {
-				error_not_writeable(filename);
-			} else if (position > UINT_MAX - size) {
-				error_too_large(position, size);
+			fileClus = retFileClus(&file);
+			ptrToFile = theOpen->find(theOpen, fileClus);
+			if (ptrToFile == NULL) {
+				error_not_open(fNames);
+			} else if (!writeCheck(ptrToFile)) {
+				error_not_writeable(fNames);
+			} else if (location > UINT_MAX - size) {
+				error_too_large(location, size);
 			} else {
-				fileW(&file, position, size, str);
+				fileW(&file, location, size, str);
 				file.sf.last_acc_date = retTime();
-				setDirEntry(&file, dir_clus, offset);
+				setDirEntry(&file, DirClus, offset);
 			}
 		}
 	}
@@ -501,111 +504,111 @@ int exitCmd(void) {
 
 
 
-int retDirEntry(union dirEntry *ptr, unsigned int directory_clus, unsigned int entry_num) {
-	unsigned int first_dir_clus, entry_first_byte_offset;
-	first_dir_clus = retSecClus(directory_clus);
-	if ((entry_first_byte_offset = 32*entry_num) >= img_info.bytes_per_sec*img_info.sec_per_clus) {
+int retDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig) {
+	unsigned int firstDirClus, entryByteOff;
+	firstDirClus = retSecClus(dirClus);
+	if ((entryByteOff = 32*entryDig) >= imageData.bytes_per_sec*imageData.sec_per_clus) {
 		// bad offset
 		return 0;
 	}
-	rChar(ptr, entry_first_byte_offset + first_dir_clus*img_info.bytes_per_sec, sizeof(union dirEntry));
+	rChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
 	return 1;
 }
 
-int setDirEntry(union dirEntry *ptr, unsigned int directory_clus, unsigned int entry_num) {
-	unsigned int first_dir_clus, entry_first_byte_offset;
-	first_dir_clus = retSecClus(directory_clus);
-	if ((entry_first_byte_offset = 32*entry_num) >= img_info.bytes_per_sec*img_info.sec_per_clus) {
+int setDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig) {
+	unsigned int firstDirClus, entryByteOff;
+	firstDirClus = retSecClus(dirClus);
+	if ((entryByteOff = 32*entryDig) >= imageData.bytes_per_sec*imageData.sec_per_clus) {
 		// bad offset
 		return 0;
 	}
-	wChar(ptr, entry_first_byte_offset + first_dir_clus*img_info.bytes_per_sec, sizeof(union dirEntry));
+	wChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
 	return 1;
 }
 
-int retNextDirEntry(union dirEntry *ptr, unsigned int directory_clus, unsigned int entry_num) {
-	unsigned int first_dir_clus, entry_first_byte_offset, next_num;
-	next_num = entry_num + 1;
-	if ((entry_first_byte_offset = 32*next_num) >= img_info.bytes_per_sec*img_info.sec_per_clus) {
-		first_dir_clus = retSecClus(retFatNextClus(directory_clus));
-		entry_first_byte_offset -= img_info.bytes_per_sec*img_info.sec_per_clus;
+int retNextDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig) {
+	unsigned int firstDirClus, entryByteOff, nextDig;
+	nextDig = entryDig + 1;
+	if ((entryByteOff = 32*nextDig) >= imageData.bytes_per_sec*imageData.sec_per_clus) {
+		firstDirClus = retSecClus(retFatNextClus(dirClus));
+		entryByteOff -= imageData.bytes_per_sec*imageData.sec_per_clus;
 	} else {
-		first_dir_clus = retSecClus(directory_clus);
+		firstDirClus = retSecClus(dirClus);
 	}
-	rChar(ptr, entry_first_byte_offset + first_dir_clus*img_info.bytes_per_sec, sizeof(union dirEntry));
+	rChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
 	return 1;
 }
 
 
 // implementation of list and open file table
 struct list *makeList(void) {
-	struct list *m_list;
-	m_list = calloc(1, sizeof(struct list));
-	m_list->clear = &clearList;
-	m_list->add = &addList;
-	m_list->remove = &remList;
-	m_list->find = &lookList;
-	m_list->get_head = &headList;
-	m_list->empty = &emptyList;
-	m_list->head = NULL;
-	m_list->size = 0;
-	return m_list;
+	struct list *theList;
+	theList = calloc(1, sizeof(struct list));
+	theList->clear = &clearList;
+	theList->add = &addList;
+	theList->remove = &remList;
+	theList->find = &lookList;
+	theList->get_head = &headList;
+	theList->empty = &emptyList;
+	theList->head = NULL;
+	theList->size = 0;
+	return theList;
 }
 
 // function for free'ing all the memory
-void delList(struct list *old_list) {
-	old_list->clear(old_list);
-	free(old_list);
+void delList(struct list *pastList) {
+	pastList->clear(pastList);
+	free(pastList);
 }
 
 // frees each entry in the list
-void clearList(struct list *m_list) {
-	struct node *ptr, *next_ptr;
-	ptr = m_list->head;
+void clearList(struct list *theList) {
+	struct node *ptr, *ptrNext;
+	ptr = theList->head;
 	while (ptr != NULL) {
-		next_ptr = ptr->next;
+		ptrNext = ptr->next;
 		free(ptr);
-		ptr = next_ptr;
+		ptr = ptrNext;
 	}
-	m_list->size = 0;
+	theList->size = 0;
 }
 
 // adds the entry with the given file cluster and read/write mode
 // will only add with a valid file mode
-int addList(struct list *m_list, unsigned int file_clus, char *mode) {
-	struct node *new_node;
-	unsigned char flags;
-	flags = toByte(mode);
-	if ((m_list->find(m_list, file_clus) == NULL) && (flags != 0x0)) {
-		new_node = calloc(1, sizeof(struct node));
-		new_node->fst_file_clus = file_clus;
-		new_node->flags = flags;
-		new_node->next = m_list->head;
-		m_list->head = new_node;
-		++(m_list->size);
+int addList(struct list *theList, unsigned int fileClus, char *mode) {
+	struct node *addNode;
+	unsigned char options;
+	options = toByte(mode);
+	if ((theList->find(theList, fileClus) == NULL) && (options != 0x0)) {
+		addNode = calloc(1, sizeof(struct node));
+		addNode->fst_fileClus = fileClus;
+		addNode->options = options;
+		addNode->next = theList->head;
+		theList->head = addNode;
+		++(theList->size);
 		return 1;
 	}
 	return 0;
 }
 
 // removes the given file cluster from the list
-int remList(struct list *m_list, unsigned int file_clus) {
-	struct node *ptr, *prev;
-	ptr = m_list->head;
+int remList(struct list *theList, unsigned int fileClus) {
+	struct node *ptr, *previous;
+	ptr = theList->head;
 	while (ptr != NULL) {
-		if (ptr->fst_file_clus == file_clus) {
+		if (ptr->fst_fileClus == fileClus) {
 			break;
 		}
-		prev = ptr;
+		previous = ptr;
 		ptr = ptr->next;
 	}
 	if (ptr != NULL) {
-		if (ptr == m_list->head) {
-			m_list->head = ptr->next;
+		if (ptr == theList->head) {
+			theList->head = ptr->next;
 		} else {
-			prev->next = ptr->next;
+			previous->next = ptr->next;
 		}
-		--(m_list->size);
+		--(theList->size);
 		free(ptr);
 		return 1;
 	}
@@ -613,11 +616,11 @@ int remList(struct list *m_list, unsigned int file_clus) {
 }
 
 // returns the node pointer to the given file cluster or NULL if it's not there
-struct node *lookList(struct list *m_list, unsigned int file_clus) {
+struct node *lookList(struct list *theList, unsigned int fileClus) {
 	struct node *ptr;
-	ptr = m_list->head;
+	ptr = theList->head;
 	while (ptr != NULL) {
-		if (ptr->fst_file_clus == file_clus) {
+		if (ptr->fst_fileClus == fileClus) {
 			break;
 		}
 		ptr = ptr->next;
@@ -626,12 +629,12 @@ struct node *lookList(struct list *m_list, unsigned int file_clus) {
 }
 
 // returns the head of the list (for stack-like behavior)
-struct node *headList(struct list *m_list) {
-	return m_list->head;
+struct node *headList(struct list *theList) {
+	return theList->head;
 }
 
-int emptyList(struct list *m_list) {
-	return !m_list->size;
+int emptyList(struct list *theList) {
+	return !theList->size;
 }
 
 unsigned char toByte(char *mode) {
@@ -647,7 +650,7 @@ unsigned char toByte(char *mode) {
 }
 
 int readCheck(struct node *file) {
-	if ((file->flags & OPEN_READ) == OPEN_READ) {
+	if ((file->options & OPEN_READ) == OPEN_READ) {
 		return 1;
 	} else {
 		return 0;
@@ -655,7 +658,7 @@ int readCheck(struct node *file) {
 }
 
 int writeCheck(struct node *file) {
-	if ((file->flags & OPEN_WRITE) == OPEN_WRITE) {
+	if ((file->options & OPEN_WRITE) == OPEN_WRITE) {
 		return 1;
 	} else {
 		return 0;
@@ -664,148 +667,148 @@ int writeCheck(struct node *file) {
 
 unsigned int retSize(union dirEntry *file) {
 	unsigned int size;
-	size = file->sf.file_size;
-	if (endianness) {
+	size = file->sf.sizeFile;
+	if (endianVar) {
 		size = switch32(size);
 	}
 	return size;
 }
 
-int fileR(union dirEntry *file, unsigned int position, unsigned int size) {
-	unsigned int offset, bytes_left, cur_clus, bytes_per_clus, byte_position, nmemb;
-	char *buffer;
-	bytes_per_clus = img_info.bytes_per_sec*img_info.sec_per_clus;
-	buffer = malloc(sizeof(char)*(bytes_per_clus));
-	offset = position;
-	bytes_left = size;
-	cur_clus = retFileClus(file);
-	while (offset > bytes_per_clus) {
-		cur_clus = retFatNextClus(cur_clus);
-		if (chainEnd(cur_clus)) {
-			free(buffer);
+int fileR(union dirEntry *file, unsigned int location, unsigned int size) {
+	unsigned int offset, remainBytes, thisClus, clusBytes, posByte, use;
+	char *buff;
+	clusBytes = imageData.bytes_per_sec*imageData.sec_per_clus;
+	buff = malloc(sizeof(char)*(clusBytes));
+	offset = location;
+	remainBytes = size;
+	thisClus = retFileClus(file);
+	while (offset > clusBytes) {
+		thisClus = retFatNextClus(thisClus);
+		if (chainEnd(thisClus)) {
+			free(buff);
 			return 0;
 		}
-		offset -= bytes_per_clus;
+		offset -= clusBytes;
 	}
-	byte_position = img_info.bytes_per_sec*retSecClus(cur_clus) + offset;
-	if (bytes_left > bytes_per_clus - offset) {
-		nmemb = bytes_per_clus - offset;
+	posByte = imageData.bytes_per_sec*retSecClus(thisClus) + offset;
+	if (remainBytes > clusBytes - offset) {
+		use = clusBytes - offset;
 	} else {
-		nmemb = bytes_left;
+		use = remainBytes;
 	}
-	rChar(buffer, byte_position, nmemb);
-	fwrite(buffer, sizeof(char), nmemb, stdout);
-	bytes_left -= nmemb;
-	while (bytes_left > 0) {
-		cur_clus = retFatNextClus(cur_clus);
-		if (chainEnd(cur_clus)) {
-			free(buffer);
+	rChar(buff, posByte, use);
+	fwrite(buff, sizeof(char), use, stdout);
+	remainBytes -= use;
+	while (remainBytes > 0) {
+		thisClus = retFatNextClus(thisClus);
+		if (chainEnd(thisClus)) {
+			free(buff);
 			return 0;
 		}
-		byte_position = img_info.bytes_per_sec*retSecClus(cur_clus);
-		if (bytes_left < bytes_per_clus) {
-			nmemb = bytes_left;
+		posByte = imageData.bytes_per_sec*retSecClus(thisClus);
+		if (remainBytes < clusBytes) {
+			use = remainBytes;
 		} else {
-			nmemb = bytes_per_clus;
+			use = clusBytes;
 		}
-		rChar(buffer, byte_position, nmemb);
-		fwrite(buffer, sizeof(char), nmemb, stdout);
-		bytes_left -= nmemb;
+		rChar(buff, posByte, use);
+		fwrite(buff, sizeof(char), use, stdout);
+		remainBytes -= use;
 	}
 	return 1;
 }
 
-int fileW(union dirEntry *file, unsigned int position, unsigned int size, char *str) {
-	unsigned int offset, bytes_left, cur_clus, bytes_per_clus, byte_position, nmemb, start;
-	bytes_per_clus = img_info.bytes_per_sec*img_info.sec_per_clus;
-	offset = position;
-	bytes_left = size;
-	start = 0;
-	cur_clus = retFileClus(file);
-	while (offset > bytes_per_clus) {
-		cur_clus = retFatNextClus(cur_clus);
-		if (chainEnd(cur_clus)) {
-			expClus(cur_clus);
+int fileW(union dirEntry *file, unsigned int location, unsigned int size, char *str) {
+	unsigned int offset, remainBytes, thisClus, clusBytes, posByte, use, begin;
+	clusBytes = imageData.bytes_per_sec*imageData.sec_per_clus;
+	offset = location;
+	remainBytes = size;
+	begin = 0;
+	thisClus = retFileClus(file);
+	while (offset > clusBytes) {
+		thisClus = retFatNextClus(thisClus);
+		if (chainEnd(thisClus)) {
+			expClus(thisClus);
 		}
-		offset -= bytes_per_clus;
+		offset -= clusBytes;
 	}
-	byte_position = img_info.bytes_per_sec*retSecClus(cur_clus) + offset;
-	if (bytes_left > bytes_per_clus - offset) {
-		nmemb = bytes_per_clus - offset;
+	posByte = imageData.bytes_per_sec*retSecClus(thisClus) + offset;
+	if (remainBytes > clusBytes - offset) {
+		use = clusBytes - offset;
 	} else {
-		nmemb = bytes_left;
+		use = remainBytes;
 	}
-	wChar(&str[start], byte_position, nmemb);
-	bytes_left -= nmemb;
-	start += nmemb;
-	while (bytes_left > 0) {
-		cur_clus = retFatNextClus(cur_clus);
-		if (chainEnd(cur_clus)) {
-			expClus(cur_clus);
+	wChar(&str[begin], posByte, use);
+	remainBytes -= use;
+	begin += use;
+	while (remainBytes > 0) {
+		thisClus = retFatNextClus(thisClus);
+		if (chainEnd(thisClus)) {
+			expClus(thisClus);
 		}
-		byte_position = img_info.bytes_per_sec*retSecClus(cur_clus);
-		if (bytes_left < bytes_per_clus) {
-			nmemb = bytes_left;
+		posByte = imageData.bytes_per_sec*retSecClus(thisClus);
+		if (remainBytes < clusBytes) {
+			use = remainBytes;
 		} else {
-			nmemb = bytes_per_clus;
+			use = clusBytes;
 		}
-		wChar(&str[start], byte_position, nmemb);
-		bytes_left -= nmemb;
-		start += nmemb;
+		wChar(&str[begin], posByte, use);
+		remainBytes -= use;
+		begin += use;
 	}
-	if (position + size > file->sf.file_size) {
-		file->sf.file_size = position + size;
+	if (location + size > file->sf.sizeFile) {
+		file->sf.sizeFile = location + size;
 	}
 	return 1;
 }
 
-int fileDel(union dirEntry *file_ptr, unsigned int directory_clus, unsigned int entry_num) {
-	union dirEntry next_file;
-	struct list *clusters;
-	struct node *clus_node;
-	unsigned int file_clus;
-	clusters = makeList();
-	file_clus = retFileClus(file_ptr);
+int fileDel(union dirEntry *ptrToFile, unsigned int dirClus, unsigned int entryDig) {
+	union dirEntry fileNext;
+	struct list *theClus;
+	struct node *theClusNode;
+	unsigned int fileClus;
+	theClus = makeList();
+	fileClus = retFileClus(ptrToFile);
 	do {
-		clusters->add(clusters, file_clus, "r");
-		file_clus = retFatNextClus(file_clus);
-	} while (!chainEnd(file_clus));
+		theClus->add(theClus, fileClus, "r");
+		fileClus = retFatNextClus(fileClus);
+	} while (!chainEnd(fileClus));
 	
-	while (!clusters->empty(clusters)) {
-		clus_node = clusters->get_head(clusters);
-		clustDel(clus_node->fst_file_clus);
-		clusters->remove(clusters, clus_node->fst_file_clus);
+	while (!theClus->empty(theClus)) {
+		theClusNode = theClus->get_head(theClus);
+		clustDel(theClusNode->fst_fileClus);
+		theClus->remove(theClus, theClusNode->fst_fileClus);
 	}
 
-	retNextDirEntry(&next_file, directory_clus, entry_num);
-	if (next_file.raw_bytes[0] == 0x00) {
-		file_ptr->raw_bytes[0] = 0x00;
+	retNextDirEntry(&fileNext, dirClus, entryDig);
+	if (fileNext.raw_bytes[0] == 0x00) {
+		ptrToFile->raw_bytes[0] = 0x00;
 	} else {
-		file_ptr->raw_bytes[0] = 0xE5;
+		ptrToFile->raw_bytes[0] = 0xE5;
 	}
-	delList(clusters);
-	setDirEntry(file_ptr, directory_clus, entry_num);
+	delList(theClus);
+	setDirEntry(ptrToFile, dirClus, entryDig);
 	return 1;
 }
 
-int clustDel(unsigned int file_clus) {
-	unsigned int true_value;
-	true_value = retFatNextClus_true(file_clus);
-	true_value &= 0xF0000000;
-	changeFats(file_clus, true_value);
+int clustDel(unsigned int fileClus) {
+	unsigned int actualNum;
+	actualNum = retFatNextClus_true(fileClus);
+	actualNum &= 0xF0000000;
+	changeFats(fileClus, actualNum);
 	return 1;
 }
 
-int makeDirEntry(char *file_name, unsigned int directory_clus, union dirEntry *file, unsigned int *clus_ptr, unsigned int *offset_ptr, int find_new_clus){
+int makeDirEntry(char *nameFile, unsigned int dirClus, union dirEntry *file, unsigned int *ptrClus, unsigned int *ptrOff, int lookupClusNew){
 	unsigned int clus;
-	char short_name[11];
-	lookupOpenDirEntry(directory_clus, file, clus_ptr, offset_ptr);
-	fileShort(file_name, short_name);
-	strncpy(file->sf.name, short_name, 11);
+	char shNames[11];
+	lookupOpenDirEntry(dirClus, file, ptrClus, ptrOff);
+	fileShort(nameFile, shNames);
+	strncpy(file->sf.name, shNames, 11);
 	file->sf.crt_time = file->sf.wrt_time = retTime();
 	file->sf.crt_date = file->sf.wrt_date = file->sf.last_acc_date = retDate();
-	file->sf.file_size = 0;
-	if (find_new_clus) {
+	file->sf.sizeFile = 0;
+	if (lookupClusNew) {
 		clus = lookupOpenClus();
 		file->sf.first_clus_hi = retHiVal(clus);
 		file->sf.first_clus_lo = retLoVal(clus);
@@ -814,37 +817,37 @@ int makeDirEntry(char *file_name, unsigned int directory_clus, union dirEntry *f
 	return 0;
 }
 
-int makeFile(char *file_name, unsigned int directory_clus) {
+int makeFile(char *nameFile, unsigned int dirClus) {
 	unsigned int clus, offset;
 	union dirEntry file;
-	makeDirEntry(file_name, directory_clus, &file, &clus, &offset, 1);
+	makeDirEntry(nameFile, dirClus, &file, &clus, &offset, 1);
 	file.sf.attr = 0x00;
 	setDirEntry(&file, clus, offset);
 	return 1;
 }
 
-int makeDir(char *dir_name, unsigned int directory_clus) {
-	unsigned int clus, offset, d_clus, d_offset, dd_clus, dd_offset, new_dir_clus;
-	union dirEntry file, d_file, dd_file;
-	makeDirEntry(dir_name, directory_clus, &file, &clus, &offset, 1);
+int makeDir(char *dir_name, unsigned int dirClus) {
+	unsigned int clus, offset, dClus1, dOff1, dClus2, dOff2, newDirClus;
+	union dirEntry file, d_file, dd_file; // CHANGE HERE
+	makeDirEntry(dir_name, dirClus, &file, &clus, &offset, 1);
 	file.sf.attr = 0x10;
 	setDirEntry(&file, clus, offset);
-	new_dir_clus = retFileClus(&file);
-	makeDirEntry(".", new_dir_clus, &d_file, &d_clus, &d_offset, 0);
-	d_file.sf.first_clus_hi = retHiVal(new_dir_clus);
-	d_file.sf.first_clus_lo = retLoVal(new_dir_clus);
+	newDirClus = retFileClus(&file);
+	makeDirEntry(".", newDirClus, &d_file, &dClus1, &dOff1, 0);
+	d_file.sf.first_clus_hi = retHiVal(newDirClus);
+	d_file.sf.first_clus_lo = retLoVal(newDirClus);
 	d_file.sf.attr = 0x10;
-	setDirEntry(&d_file, d_clus, d_offset);
-	makeDirEntry("..", new_dir_clus, &dd_file, &dd_clus, &dd_offset, 0);
-	if (directory_clus == img_info.root_clus) {
+	setDirEntry(&d_file, dClus1, dOff1);
+	makeDirEntry("..", newDirClus, &dd_file, &dClus2, &dOff2, 0);
+	if (dirClus == imageData.root_clus) {
 		dd_file.sf.first_clus_hi = 0x0000;
 		dd_file.sf.first_clus_lo = 0x0000;
 	} else {
-		dd_file.sf.first_clus_hi = retHiVal(directory_clus);
-		dd_file.sf.first_clus_lo = retLoVal(directory_clus);
+		dd_file.sf.first_clus_hi = retHiVal(dirClus);
+		dd_file.sf.first_clus_lo = retLoVal(dirClus);
 	}
 	dd_file.sf.attr = 0x10;
-	setDirEntry(&dd_file, dd_clus, dd_offset);
+	setDirEntry(&dd_file, dClus2, dOff2);
 	return 1;
 }
 
@@ -860,9 +863,9 @@ int makeDir(char *dir_name, unsigned int directory_clus) {
  * into the c-string. Returns the c-string.
  */
 char *readIn() {
-	char *cmd_line = calloc(INPUT_BUFFER_SIZE, sizeof(char));
-	if (fgets(cmd_line, INPUT_BUFFER_SIZE, stdin)) {
-		return cmd_line;
+	char *progLine = calloc(INPUT_BUFFER_SIZE, sizeof(char));
+	if (fgets(progLine, INPUT_BUFFER_SIZE, stdin)) {
+		return progLine;
 	} else {
 		//Do something about this error, NULL on return
 		return NULL;
@@ -883,95 +886,95 @@ char **parse(char *line) {
 
 /* parseWhite
  *
- * Takes a c-string, cmd_line, and removes unnecessary whitespace and adds
+ * Takes a c-string, progLine, and removes unnecessary whitespace and adds
  * whitespace where needed.
  *
  * special characters: |, <, >, &, $, ~
  * don't do this for: ., /
- * whitespace: <space>, \t, \v, \f, \r (\n is used to delimit commands)
+ * whitespace: <space>, \t, \v, \f, \r (\n is used to debound commands)
  */
-char *parseWhite(char *cmd_line) {
-	remLeadWhite(cmd_line);
-	remMidWhite(cmd_line);
-	//addMidWhite(cmd_line);
-	remTrailWhite(cmd_line);
-	return cmd_line;
+char *parseWhite(char *progLine) {
+	remLeadWhite(progLine);
+	remMidWhite(progLine);
+	//addMidWhite(progLine);
+	remTrailWhite(progLine);
+	return progLine;
 }
 
 /* parseArgs
  *
- * Takes a c-string, cmd_line, and splits it into tokens delimited by space. An
+ * Takes a c-string, progLine, and splits it into tokens debounded by space. An
  * array of strings is returned. The size of the array of strings is governed by
  * the constant PARAM_LIMIT. The array and it's elements use allocated memory
  * and should be freed later. The last element is followed by a NULL pointer to
  * mark the end of the array.
  */
-char **parseArgs(char *cmd_line) {
-	size_t arg_amount;
-	char *tmp_line;
+char **parseArgs(char *progLine) {
+	size_t argQuantity;
+	char *lineTemp;
 	int i = 0;
-	int offset, position;
-	char **cmd_args;
-	arg_amount = 0;
-	arg_amount = trackArgs(cmd_line);
-	// arg_amount + 1 for the null value at the end
-	cmd_args = calloc(arg_amount + 1, sizeof(char *));
-	tmp_line = strndup(cmd_line, strlen(cmd_line) + 1);
-	position = 0;
-	offset = strcspn(&tmp_line[position], " ");
+	int offset, location;
+	char **progArgs;
+	argQuantity = 0;
+	argQuantity = trackArgs(progLine);
+	// argQuantity + 1 for the null value at the end
+	progArgs = calloc(argQuantity + 1, sizeof(char *));
+	lineTemp = strndup(progLine, strlen(progLine) + 1);
+	location = 0;
+	offset = strcspn(&lineTemp[location], " ");
 	while (offset != 0) {
-		cmd_args[i] = (char *)malloc(offset + 1);
-		strncpy(cmd_args[i], &tmp_line[position], offset);
-		cmd_args[i++][offset] = '\0';
-		if (tmp_line[position + offset] == '\0') {
+		progArgs[i] = (char *)malloc(offset + 1);
+		strncpy(progArgs[i], &lineTemp[location], offset);
+		progArgs[i++][offset] = '\0';
+		if (lineTemp[location + offset] == '\0') {
 			break;
 		}
-		if (tmp_line[position + offset + 1] == '\"') {
-			position += offset + 2;
-			offset = strcspn(&tmp_line[position], "\"");
-			cmd_args[i] = (char *)malloc(offset + 1);
-			strncpy(cmd_args[i], &tmp_line[position], offset);
-			cmd_args[i++][offset] = '\0';
+		if (lineTemp[location + offset + 1] == '\"') {
+			location += offset + 2;
+			offset = strcspn(&lineTemp[location], "\"");
+			progArgs[i] = (char *)malloc(offset + 1);
+			strncpy(progArgs[i], &lineTemp[location], offset);
+			progArgs[i++][offset] = '\0';
 			++offset;
 		}
-		position += offset + 1;
-		if (tmp_line[position - 1] == '\0') {
+		location += offset + 1;
+		if (lineTemp[location - 1] == '\0') {
 			break;
 		}
-		offset = strcspn(&tmp_line[position], " ");
+		offset = strcspn(&lineTemp[location], " ");
 	}
-	/*token = strtok_r(tmp_line, sep, &save_ptr);
+	/*token = strtok_r(lineTemp, sep, &save_ptr);
 	while (token != NULL) {
-		cmd_args[i] = (char *) malloc(strlen(token) + 1);
-		strcpy(cmd_args[i++], token);
+		progArgs[i] = (char *) malloc(strlen(token) + 1);
+		strcpy(progArgs[i++], token);
 		token = strtok_r(NULL, sep, &save_ptr);
 	}*/
-	cmd_args[i] = NULL;
-	free(tmp_line);
-	return cmd_args;
+	progArgs[i] = NULL;
+	free(lineTemp);
+	return progArgs;
 }
 
 /* trackArgs
  *
- * This take a c-string and counts the number of arguments which corresponds to
+ * This take a c-string and counters the number of arguments which corresponds to
  * the number of spaces plus one.
  */
-size_t trackArgs(char *cmd_line) {
-	int i, in_quotes;
-	size_t count;
-	in_quotes = 0;
-	count = 0;
-	for (i = 0; cmd_line[i] != '\0'; ++i) {
-		if (cmd_line[i] == ' ' && !in_quotes) {
-			++count;
-		} else if (cmd_line[i] == '\"' && !in_quotes) {
-			++count;
-			in_quotes = 1;
-		} else if (cmd_line[i] == '\"' && in_quotes) {
-			in_quotes = 0;
+size_t trackArgs(char *progLine) {
+	int i, checkQuotes;
+	size_t counter;
+	checkQuotes = 0;
+	counter = 0;
+	for (i = 0; progLine[i] != '\0'; ++i) {
+		if (progLine[i] == ' ' && !checkQuotes) {
+			++counter;
+		} else if (progLine[i] == '\"' && !checkQuotes) {
+			++counter;
+			checkQuotes = 1;
+		} else if (progLine[i] == '\"' && checkQuotes) {
+			checkQuotes = 0;
 		}
 	}
-	return count + 1;
+	return counter + 1;
 }
 
 /* remLeadWhite
@@ -979,21 +982,21 @@ size_t trackArgs(char *cmd_line) {
  * Takes the input c-string and loops through string. The leading whitespace is
  * ignored while the rest of the string is shifted to the front.
  */
-char *remLeadWhite(char *cmd_line){
-	char *copy = cmd_line, *ptr = cmd_line;
-	short reached_nonspace = 0;
+char *remLeadWhite(char *progLine){
+	char *tmp = progLine, *ptr = progLine;
+	short notWhite = 0;
 	while (*ptr != 0) {
 		if (!isspace(*ptr)){
-			reached_nonspace = 1;
+			notWhite = 1;
 		}
-		if (reached_nonspace) {
-			*copy = *ptr;
-			copy++;
+		if (notWhite) {
+			*tmp = *ptr;
+			tmp++;
 		}
 		ptr++;
 	}
-	*copy = '\0';
-	return cmd_line;
+	*tmp = '\0';
+	return progLine;
 }
 
 /* remMidWhite
@@ -1006,57 +1009,57 @@ char *remLeadWhite(char *cmd_line){
  * A null byte is added to the end of the string -- doesn't worry about the 
  * whitespace at the end.
  */
-char *remMidWhite(char *cmd_line){
-	// copy holds place where char is modified, ptr holds place where checking
-	char *copy = cmd_line, *ptr = cmd_line;
-	int in_quotes = 0;
-	int ws_count = 0;
+char *remMidWhite(char *progLine){
+	// tmp holds place where char is modified, ptr holds place where checking
+	char *tmp = progLine, *ptr = progLine;
+	int checkQuotes = 0;
+	int counterWhite = 0;
 	while (*ptr != 0) {
 		if (*ptr == '"'){
-			*copy = *ptr;
-			copy++;
-			if (in_quotes == 0){
+			*tmp = *ptr;
+			tmp++;
+			if (checkQuotes == 0){
 				if (checkLastQuote(ptr)){
 					error_dangling_quote();
-					cmd_line[0] = 0;
+					progLine[0] = 0;
 					break;	
 				}
-				in_quotes = 1;
+				checkQuotes = 1;
 			} else {
-				in_quotes = 0;
+				checkQuotes = 0;
 			} 
 
-		} else if (in_quotes){
-			*copy = *ptr;
-			copy++;
-			ws_count = 0;
+		} else if (checkQuotes){
+			*tmp = *ptr;
+			tmp++;
+			counterWhite = 0;
 		} else if (isspace(*ptr)) {
-			if (ws_count == 0) {
-				*copy = ' ';
-				copy++;
+			if (counterWhite == 0) {
+				*tmp = ' ';
+				tmp++;
 			}
-			ws_count++;
+			counterWhite++;
 		} else {
-			*copy = *ptr;
-			copy++;
-			ws_count = 0;
+			*tmp = *ptr;
+			tmp++;
+			counterWhite = 0;
 		}
 		ptr++;
 	}
-	*copy = '\0';
-	return cmd_line;
+	*tmp = '\0';
+	return progLine;
 }
 
 int checkLastQuote(char* ptr){
-	char* init_ptr = ptr++;
+	char* ptrInitial = ptr++;
 	while (*ptr != 0){
 		if (*ptr == '"'){
-			ptr = init_ptr;
+			ptr = ptrInitial;
 			return 0;
 		}
 		++ptr;
 	}
-	ptr = init_ptr;
+	ptr = ptrInitial;
 	return 1;
 }
 
@@ -1066,9 +1069,9 @@ int checkLastQuote(char* ptr){
  * whitespace initially. Special characters include <, >, |, &. Also in
  * consideration is >>.
  */
-char *addMidWhite(char *cmd_line){
-	char copy[INPUT_BUFFER_SIZE];
-	char *ptr = cmd_line;
+char *addMidWhite(char *progLine){
+	char tmp[INPUT_BUFFER_SIZE];
+	char *ptr = progLine;
 	int i = 0;
 	while (*ptr != 0) {
 		switch (*ptr) {
@@ -1076,37 +1079,37 @@ char *addMidWhite(char *cmd_line){
 			case '<':
 			case '>':
 			case '&':
-				if (i > 0 && copy[i - 1] != ' ') {
-					copy[i++] = ' ';
+				if (i > 0 && tmp[i - 1] != ' ') {
+					tmp[i++] = ' ';
 				}
-				copy[i++] = *ptr;
+				tmp[i++] = *ptr;
 				if (*(ptr + 1) != ' ') {
-					copy[i++] = ' ';
+					tmp[i++] = ' ';
 				} else if ((ptr + 1) != 0) {
-					copy[i++] = ' ';
+					tmp[i++] = ' ';
 					++ptr;
 				}
 				++ptr;
 				break;
 			default:
-				copy[i++] = *ptr;
+				tmp[i++] = *ptr;
 				++ptr;
 		}
 	}
-	copy[i] = '\0';
-	if (!trackCmdSize(copy)) {
+	tmp[i] = '\0';
+	if (!trackCmdSize(tmp)) {
 		// error stuff goes here
 	}
-	strcpy(cmd_line, copy);
-	return cmd_line;
+	strcpy(progLine, tmp);
+	return progLine;
 }
 
 /* remTrailWhite
  *
  * Takes c-string and adds the a null byte after the last non-whitespace char.
  */
-char *remTrailWhite(char *cmd_line){
-	char *last = cmd_line, *ptr = cmd_line;
+char *remTrailWhite(char *progLine){
+	char *last = progLine, *ptr = progLine;
 	while (*ptr != 0) {
 		if (!isspace(*ptr)) {
 			last = ptr;
@@ -1114,7 +1117,7 @@ char *remTrailWhite(char *cmd_line){
 		ptr++;
 	}
 	*(++last) = '\0';
-	return cmd_line;
+	return progLine;
 }
 
 /* trackCmdSize
@@ -1122,10 +1125,10 @@ char *remTrailWhite(char *cmd_line){
  * Makes sure the given string is shorter than the maximum allowed size of the
  * command string. Returns 1 if the string is good and 0 if the string is bad
  */
-int trackCmdSize(char *cmd_line) {
+int trackCmdSize(char *progLine) {
 	int i;
 	for (i = 0; i < INPUT_BUFFER_SIZE; ++i) {
-		if (cmd_line[i] == '\0') {
+		if (progLine[i] == '\0') {
 			return 1;
 		}
 	}
@@ -1136,8 +1139,8 @@ int trackCmdSize(char *cmd_line) {
  * 
  * Takes a c-string and frees the memory allocated for that
  */
-void ridCmdLine(char *cmd_line) {
-	free(cmd_line);
+void ridCmdLine(char *progLine) {
+	free(progLine);
 }
 
 /* ridCmdArgs
@@ -1145,13 +1148,13 @@ void ridCmdLine(char *cmd_line) {
  * Takes array of c-strings and frees each element and then frees the memory of
  * the array
  */
-void ridCmdArgs(char **cmd_args) {
+void ridCmdArgs(char **progArgs) {
 	int i;
-	for (i = 0; cmd_args[i] != NULL; ++i) {
-		free(cmd_args[i]);
-		cmd_args[i] = NULL;
+	for (i = 0; progArgs[i] != NULL; ++i) {
+		free(progArgs[i]);
+		progArgs[i] = NULL;
 	}
-	free(cmd_args);
+	free(progArgs);
 }
 
 
@@ -1167,16 +1170,16 @@ void ridCmdArgs(char **cmd_args) {
 /* setup function which initializes all the global variables and opens the image
  * in read and write mode.
  */
-int setup(char *img_filename, char *exe_name) {
-	if ((fat32_img = fopen(img_filename, "r+")) == NULL) {
+int setup(char *fNamesImage, char *nameRun) {
+	if ((fatImage = fopen(fNamesImage, "r+")) == NULL) {
 		perror(NULL);
 		return 0;
 	}
-	endianness = check_endian();
+	endianVar = check_endian();
 	getFatInfo();
 	setRootDir();
 	setOpened();
-	displayIntro(img_filename, exe_name);
+	displayIntro(fNamesImage, nameRun);
 
 	return 1;
 }
@@ -1185,15 +1188,15 @@ int setup(char *img_filename, char *exe_name) {
  * sector
  */
 int getFatInfo(void) {
-	readUnSh(&img_info.bytes_per_sec, 11);
-	readUnCh(&img_info.sec_per_clus, 13);
-	readUnSh(&img_info.rsvd_sec_cnt, 14);
-	readUnCh(&img_info.num_fat, 16);
-	readUnSh(&img_info.root_ent_cnt, 17);
-	readUnInt(&img_info.tot_sec32, 32);
-	readUnInt(&img_info.fat_sz32, 36);
-	readUnSh(&img_info.ext_flags, 40);
-	readUnInt(&img_info.root_clus, 44);
+	readUnSh(&imageData.bytes_per_sec, 11);
+	readUnCh(&imageData.sec_per_clus, 13);
+	readUnSh(&imageData.rsvd_sec_cnt, 14);
+	readUnCh(&imageData.num_fat, 16);
+	readUnSh(&imageData.root_ent_cnt, 17);
+	readUnInt(&imageData.tot_sec32, 32);
+	readUnInt(&imageData.fat_sz32, 36);
+	readUnSh(&imageData.ext_options, 40);
+	readUnInt(&imageData.root_clus, 44);
 	return 0;
 }
 
@@ -1201,33 +1204,33 @@ int getFatInfo(void) {
  * the first data sector
  */
 int setRootDir(void) {
-	unsigned int data_sec;
-	data_sec = img_info.tot_sec32 - (img_info.rsvd_sec_cnt + (img_info.num_fat*img_info.fat_sz32));
-	count_of_clusters = data_sec/img_info.sec_per_clus;
-	first_data_sec = img_info.rsvd_sec_cnt + (img_info.num_fat*img_info.fat_sz32);
-	first_root_sec = retSecClus(img_info.root_clus);
-	cur_dir_clus = img_info.root_clus;
-	cur_dir_sec = first_root_sec;
-	current_directory_capacity = INIT_CUR_DIR_CAP;
-	current_directory = calloc(current_directory_capacity, sizeof(char));
-	strcat(current_directory, "/");
+	unsigned int funcDataSec;
+	funcDataSec = imageData.tot_sec32 - (imageData.rsvd_sec_cnt + (imageData.num_fat*imageData.fat_sz32));
+	numClus = funcDataSec/imageData.sec_per_clus;
+	dataSec = imageData.rsvd_sec_cnt + (imageData.num_fat*imageData.fat_sz32);
+	rootSec = retSecClus(imageData.root_clus);
+	thisDirClus = imageData.root_clus;
+	thisDirSec = rootSec;
+	thisDirCap = INIT_CUR_DIR_CAP;
+	thisDir = calloc(thisDirCap, sizeof(char));
+	strcat(thisDir, "/");
 	return 1;
 }
 
 int setOpened(void) {
-	opened_files = makeList();
+	theOpen = makeList();
 	return 1;
 }
 
 /* prints the prompt */
 void displayPrompt(void) {
-	printf("%s] ", current_directory);
+	printf("%s] ", thisDir);
 }
 
 /* prints the intro message */
-void displayIntro(char *img_filename, char *exe_name) {
-	printf("Welcome to the %s shell utility\n", exe_name);
-	printf("Image, %s, is ready to view\n", img_filename);
+void displayIntro(char *fNamesImage, char *nameRun) {
+	printf("Welcome to the %s shell utility\n", nameRun);
+	printf("Image, %s, is ready to view\n", fNamesImage);
 	printf("For a list of commands, type \"help\" or \"h\"\n");
 }
 
@@ -1243,12 +1246,12 @@ void error_dangling_quote(){
 
 
 // open/close errors
-void error_open_already(char *filename) {
-	printf("Error: %s: file already open!\n", filename);
+void error_open_already(char *fNames) {
+	printf("Error: %s: file already open!\n", fNames);
 }
 
-void error_open_no_file(char *filename) {
-	printf("Error: %s: file does not exist\n", filename);
+void error_open_no_file(char *fNames) {
+	printf("Error: %s: file does not exist\n", fNames);
 }
 
 void error_open_directory(char *directory) {
@@ -1263,14 +1266,14 @@ void error_close_directory(char *directory) {
 	printf("Error: %s: cannot close directory\n", directory);
 }
 
-void error_not_open(char *filename) {
-	printf("Error: %s: file not open\n", filename);
+void error_not_open(char *fNames) {
+	printf("Error: %s: file not open\n", fNames);
 }
 
 
 // create errors
-void error_used_file(char *file_name) {
-	printf("Error: %s: file already exists\n", file_name);
+void error_used_file(char *nameFile) {
+	printf("Error: %s: file already exists\n", nameFile);
 }
 
 void error_specify_file_and_mode(char *command){
@@ -1291,8 +1294,8 @@ void error_no_more_space(){
 
 
 // ls, cd errors
-void error_cd_file(char *filename) {
-	printf("Error: %s: not a directory\n", filename);
+void error_cd_file(char *fNames) {
+	printf("Error: %s: not a directory\n", fNames);
 }
 
 void error_cd_not_here(char *directory) {
@@ -1302,41 +1305,41 @@ void error_cd_not_here(char *directory) {
 
 // read/write errors
 void error_specify_file_pos_size(char *command) {
-	printf("Error: %s: please specify a file name, position, and size\n", command);
+	printf("Error: %s: please specify a file name, location, and size\n", command);
 }
 
 void error_specify_file_pos_size_str(char *command) {
-	printf("Error: %s: please specify a file name, position, size, and string\n", command);
+	printf("Error: %s: please specify a file name, location, size, and string\n", command);
 }
 
-void error_not_readable(char *filename) {
-	printf("Error: %s: this file is not open in read mode\n", filename);
+void error_not_readable(char *fNames) {
+	printf("Error: %s: this file is not open in read mode\n", fNames);
 }
 
-void error_beyond_EOF(unsigned int position, unsigned int size, unsigned int file_size) {
-	printf("Error: %u + %u > %u: attempt to read beyond EOF\n", position, size, file_size);
+void error_beyond_EOF(unsigned int location, unsigned int size, unsigned int sizeFile) {
+	printf("Error: %u + %u > %u: attempt to read beyond EOF\n", location, size, sizeFile);
 }
 
-void error_not_writeable(char *filename) {
-	printf("Error: %s: File is not open for writing\n", filename);
+void error_not_writeable(char *fNames) {
+	printf("Error: %s: File is not open for writing\n", fNames);
 }
 
-void error_too_large(unsigned int position, unsigned int size) {
-	printf("Error: %u + %u > %u: attempt to make file too large\n", position, size, UINT_MAX);
+void error_too_large(unsigned int location, unsigned int size) {
+	printf("Error: %u + %u > %u: attempt to make file too large\n", location, size, UINT_MAX);
 }
 
 
 // other
-void error_bad_directory(char *filename) {
-	printf("Error: %s: not a directory\n", filename);
+void error_bad_directory(char *fNames) {
+	printf("Error: %s: not a directory\n", fNames);
 }
 
 void error_not_empty(char *directory) {
 	printf("Error: %s: directory not empty\n", directory);
 }
 
-void error_file_or_directory_exists(char *filename) {
-	printf("Error: %s: file or directory exists already\n", filename);
+void error_file_or_directory_exists(char *fNames) {
+	printf("Error: %s: file or directory exists already\n", fNames);
 }
 
 void error_remove_directory(char *directory) {
@@ -1355,125 +1358,125 @@ void error_remove_directory(char *directory) {
 
 
 
-// reads nmemb amount of characters from fat32_img file at pos
-int rChar(void *ptr, long pos, size_t nmemb) {
-	long offset = pos - ftell(fat32_img);
-	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
+// reads use amount of characters from fatImage file at pos
+int rChar(void *ptr, long pos, size_t use) {
+	long offset = pos - ftell(fatImage);
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return 0;
 	}
-	if (fread(ptr, sizeof(char), nmemb, fat32_img) != nmemb) {
-		perror(NULL);
-		return 0;
-	}
-	return 1;
-}
-
-// writes nmemb amount of characters from fat32_img file at pos
-int wChar(void *ptr, long pos, size_t nmemb) {
-	long offset = pos - ftell(fat32_img);
-	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
-		perror(NULL);
-		return 0;
-	}
-	if (fwrite(ptr, sizeof(char), nmemb, fat32_img) != nmemb) {
+	if (fread(ptr, sizeof(char), use, fatImage) != use) {
 		perror(NULL);
 		return 0;
 	}
 	return 1;
 }
 
-// reads an unsigned int from fat32_img at pos
+// writes use amount of characters from fatImage file at pos
+int wChar(void *ptr, long pos, size_t use) {
+	long offset = pos - ftell(fatImage);
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
+		perror(NULL);
+		return 0;
+	}
+	if (fwrite(ptr, sizeof(char), use, fatImage) != use) {
+		perror(NULL);
+		return 0;
+	}
+	return 1;
+}
+
+// reads an unsigned int from fatImage at pos
 unsigned int *readUnInt(unsigned int *ptr, long pos) {
-	long offset = pos - ftell(fat32_img);
-	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
+	long offset = pos - ftell(fatImage);
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
 	}
-	if (fread(ptr, sizeof(unsigned int), 1, fat32_img) != 1) {
+	if (fread(ptr, sizeof(unsigned int), 1, fatImage) != 1) {
 		perror(NULL);
 		return NULL;
 	}
-	if (endianness) {
+	if (endianVar) {
 		*ptr = switch32(*ptr);
 	}
 	return ptr;
 }
 
-// writes an unsigned int to fat32_img at pos
+// writes an unsigned int to fatImage at pos
 unsigned int *writeUnInt(unsigned int *ptr, long pos) {
 	long offset;
-	unsigned int copy;
-	offset = pos - ftell(fat32_img);
-	if (endianness) {
-		copy = switch32(*ptr);
+	unsigned int tmp;
+	offset = pos - ftell(fatImage);
+	if (endianVar) {
+		tmp = switch32(*ptr);
 	} else {
-		copy = *ptr;
+		tmp = *ptr;
 	}
-	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
 	}
-	if (fwrite(&copy, sizeof(unsigned int), 1, fat32_img) != 1) {
+	if (fwrite(&tmp, sizeof(unsigned int), 1, fatImage) != 1) {
 		perror(NULL);
 		return NULL;
 	}
 	return ptr;
 }
 
-// reads an unsigned short from fat32_img at pos
+// reads an unsigned short from fatImage at pos
 unsigned short *readUnSh(unsigned short *ptr, long pos) {
-	long offset = pos - ftell(fat32_img);
-	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
+	long offset = pos - ftell(fatImage);
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
 	}
-	if (fread(ptr, sizeof(unsigned short), 1, fat32_img) != 1) {
+	if (fread(ptr, sizeof(unsigned short), 1, fatImage) != 1) {
 		perror(NULL);
 		return NULL;
 	}
-	if (endianness) {
+	if (endianVar) {
 		*ptr = switch16(*ptr);
 	}
 	return ptr;
 }
 
-// writes an unsigned short to fat32_img at pos
+// writes an unsigned short to fatImage at pos
 unsigned short *writeUnSh(unsigned short *ptr, long pos) {
 	long offset;
-	unsigned short copy;
-	offset = pos - ftell(fat32_img);
-	if (endianness) {
-		copy = switch16(*ptr);
+	unsigned short tmp;
+	offset = pos - ftell(fatImage);
+	if (endianVar) {
+		tmp = switch16(*ptr);
 	} else {
-		copy = *ptr;
+		tmp = *ptr;
 	}
-	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
 	}
-	if (fwrite(&copy, sizeof(unsigned short), 1, fat32_img) != 1) {
+	if (fwrite(&tmp, sizeof(unsigned short), 1, fatImage) != 1) {
 		perror(NULL);
 		return NULL;
 	}
 	return ptr;
 }
 
-// reads an unsigned char from fat32_img at pos
+// reads an unsigned char from fatImage at pos
 unsigned char *readUnCh(unsigned char *ptr, long pos) {
-	long offset = pos - ftell(fat32_img);
-	if (fseek(fat32_img, offset, SEEK_CUR) == -1) {
+	long offset = pos - ftell(fatImage);
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
 	}
-	if (fread(ptr, sizeof(char), 1, fat32_img) != 1) {
+	if (fread(ptr, sizeof(char), 1, fatImage) != 1) {
 		perror(NULL);
 		return NULL;
 	}
 	return ptr;
 }
 
-// writes an unsigned char to fat32_img at pos
+// writes an unsigned char to fatImage at pos
 unsigned int switch32(unsigned int val) {
 	return ((val>>24)&0xff) | ((val<<8)&0xff0000) | ((val>>8)&0xff00) | ((val<<24)&0xff000000);
 }
@@ -1493,36 +1496,36 @@ int check_endian(void) {
 
 // follows the formula from the FAT32 specifications
 unsigned int retSecClus(unsigned int clus) {
-	return (clus - 2)*img_info.sec_per_clus + first_data_sec;
+	return (clus - 2)*imageData.sec_per_clus + dataSec;
 }
 
-/* returns the absolute position of the given cluster in the given FAT in terms
+/* returns the absolute location of the given cluster in the given FAT in terms
  * of bytes
  */
 unsigned long retFatClusPos(unsigned int clus, unsigned int fat) {
-	unsigned int i, fat_start_sec;
-	i = fat < img_info.num_fat ? fat : 0;
-	fat_start_sec = img_info.rsvd_sec_cnt + i*img_info.fat_sz32;
-	return fat_start_sec*img_info.bytes_per_sec + 4*clus;
+	unsigned int i, beginSecFAT;
+	i = fat < imageData.num_fat ? fat : 0;
+	beginSecFAT = imageData.rsvd_sec_cnt + i*imageData.fat_sz32;
+	return beginSecFAT*imageData.bytes_per_sec + 4*clus;
 }
 
 /* returns the next cluster in the chain
  */
 unsigned int retFatNextClus(unsigned int clus) {
-	unsigned long position;
-	unsigned int next_clus;
-	position = retFatClusPos(clus, 0);
-	readUnInt(&next_clus, position);
-	return next_clus & NEXT_CLUS_MASK;
+	unsigned long location;
+	unsigned int nextClus;
+	location = retFatClusPos(clus, 0);
+	readUnInt(&nextClus, location);
+	return nextClus & NEXT_CLUS_MASK;
 }
 
 // same as above but doesn't apply the NEXT_CLUS_MASK to result
 unsigned int retFatNextClus_true(unsigned int clus) {
-	unsigned long position;
-	unsigned int next_clus;
-	position = retFatClusPos(clus, 0);
-	readUnInt(&next_clus, position);
-	return next_clus;
+	unsigned long location;
+	unsigned int nextClus;
+	location = retFatClusPos(clus, 0);
+	readUnInt(&nextClus, location);
+	return nextClus;
 }
 
 // checks if the value is one of the end of chain values
@@ -1534,77 +1537,77 @@ int chainEnd(unsigned int clus) {
 	}
 }
 
-// changes the values in all file allocation tables at file_clus to "value"
-int changeFats(unsigned int file_clus, unsigned int value) {
-	unsigned long position;
+// changes the values in all file allocation tables at fileClus to "value"
+int changeFats(unsigned int fileClus, unsigned int value) {
+	unsigned long location;
 	int i;
-	for (i = 0; i < img_info.num_fat; ++i) {
-		position = retFatClusPos(file_clus, i);
-		writeUnInt(&value, position);
+	for (i = 0; i < imageData.num_fat; ++i) {
+		location = retFatClusPos(fileClus, i);
+		writeUnInt(&value, location);
 	}
 	return 1;
 }
 
-// takes a short name and stores transformed name to filename
-int shortLow(char filename[12], char short_name[11]) {
+// takes a short name and stores transformed name to fNames
+int shortLow(char fNames[12], char shNames[11]) {
 	int i, j;
 	for (i = 0, j = 0; i < 11; ++i) {
-		if (short_name[i] != ' ') {
+		if (shNames[i] != ' ') {
 			if (i == 8) {
-				filename[j++] = '.';
+				fNames[j++] = '.';
 			}
-			filename[j++] = tolower(short_name[i]);
+			fNames[j++] = tolower(shNames[i]);
 		}
 	}
 	for (j = j; j < 12; ++j) {
-		filename[j] = '\0';
+		fNames[j] = '\0';
 	}
 	return 1;
 }
 
-// takes filename and stores "short name transformed" string in short_name
-int fileShort(char filename[12], char short_name[11]) {
+// takes fNames and stores "short name transformed" string in shNames
+int fileShort(char fNames[12], char shNames[11]) {
 	int i, j;
-	if (strcmp(filename, ".") == 0) {
-		strcpy(short_name, ".          ");
+	if (strcmp(fNames, ".") == 0) {
+		strcpy(shNames, ".          ");
 		return 1;
-	} else if (strcmp(filename, "..") == 0) {
-		strcpy(short_name, "..         ");
+	} else if (strcmp(fNames, "..") == 0) {
+		strcpy(shNames, "..         ");
 		return 1;
 	}
 	i = 0, j = 0;
-	while (i < 8 && filename[j] != '.' && filename[j] !='\0') {
-		short_name[i++] = toupper(filename[j++]);
+	while (i < 8 && fNames[j] != '.' && fNames[j] !='\0') {
+		shNames[i++] = toupper(fNames[j++]);
 	}
 	for (i = i; i < 8; i++) {
-		short_name[i] = ' ';
+		shNames[i] = ' ';
 	}
-	if (filename[j++] == '.') {
-		while (i < 11 && filename != '\0') {
-			short_name[i++] = toupper(filename[j++]);
+	if (fNames[j++] == '.') {
+		while (i < 11 && fNames != '\0') {
+			shNames[i++] = toupper(fNames[j++]);
 		}
 	}
 	for (i = i; i < 11; ++i) {
-		short_name[i] = ' ';
+		shNames[i] = ' ';
 	}
 	return 1;
 }
 
-// finds the file in the given directory entry with name "filename". returns 1
-// if a file is found and 0 if no file is found
-int lookupFile(char *filename, unsigned int directory_clus, union dirEntry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr) {
-	unsigned int current_clus, i, limit, done;
+// finds the file in the given directory entry with name "fNames". returns 1
+// if a file is searched and 0 if no file is searched
+int lookupFile(char *fNames, unsigned int dirClus, union dirEntry *ptr, unsigned int *ptrClus, unsigned int *ptrOff) {
+	unsigned int thisClus, i, bound, finish;
 	union dirEntry file;
-	char short_name[11];
-	fileShort(filename, short_name);
-	current_clus = directory_clus;
-	limit = img_info.bytes_per_sec*img_info.sec_per_clus/32;
-	done = 0;
+	char shNames[11];
+	fileShort(fNames, shNames);
+	thisClus = dirClus;
+	bound = imageData.bytes_per_sec*imageData.sec_per_clus/32;
+	finish = 0;
 	do {
-		for (i = 0; i < limit; ++i) {
-			retDirEntry(&file, current_clus, i);
+		for (i = 0; i < bound; ++i) {
+			retDirEntry(&file, thisClus, i);
 			if (file.raw_bytes[0] == 0x00) {
-				done = 1;
+				finish = 1;
 				break;
 			} else if (file.raw_bytes[0] == 0xE5) {
 				continue;
@@ -1612,47 +1615,47 @@ int lookupFile(char *filename, unsigned int directory_clus, union dirEntry *ptr,
 				continue;
 			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
 				continue;
-			} else if ((strncmp(file.sf.name, short_name, 11) == 0)) {
+			} else if ((strncmp(file.sf.name, shNames, 11) == 0)) {
 				*ptr = file;
-				if (clus_ptr != NULL) {
-					*clus_ptr = current_clus;
+				if (ptrClus != NULL) {
+					*ptrClus = thisClus;
 				}
-				if (offset_ptr != NULL) {
-					*offset_ptr = i;
+				if (ptrOff != NULL) {
+					*ptrOff = i;
 				}
 				return 1;
 			}
 		}
-		current_clus = retFatNextClus(current_clus);
-	} while (!chainEnd(current_clus) && !done);
+		thisClus = retFatNextClus(thisClus);
+	} while (!chainEnd(thisClus) && !finish);
 	return 0;
 }
 
 // gets the first file cluster in the given directory entry
 unsigned int retFileClus(union dirEntry *ptr) {
-	unsigned int file_clus;
+	unsigned int fileClus;
 	unsigned short hi, lo;
 	hi = ptr->sf.first_clus_hi;
 	lo = ptr->sf.first_clus_lo;
-	if (endianness) {
+	if (endianVar) {
 		hi = switch16(hi);
 		lo = switch16(lo);
 	}
-	file_clus = (hi << 16) | (lo & 0xFFFF);
-	return file_clus;
+	fileClus = (hi << 16) | (lo & 0xFFFF);
+	return fileClus;
 }
 
 // checks if the directory is empty
 int emptyDir(union dirEntry *dir) {
-	unsigned int current_clus, i, j, limit, done;
+	unsigned int thisClus, i, j, bound, finish;
 	union dirEntry file;
-	current_clus = retFileClus(dir);
-	limit = img_info.bytes_per_sec*img_info.sec_per_clus/32;
-	done = 0;
+	thisClus = retFileClus(dir);
+	bound = imageData.bytes_per_sec*imageData.sec_per_clus/32;
+	finish = 0;
 	j = 0;
 	do {
-		for (i = 0; i < limit; ++i, ++j) {
-			retDirEntry(&file, current_clus, i);
+		for (i = 0; i < bound; ++i, ++j) {
+			retDirEntry(&file, thisClus, i);
 			if (j == 0 || j == 1) {
 				continue;
 			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
@@ -1665,8 +1668,8 @@ int emptyDir(union dirEntry *dir) {
 				return 0;
 			}
 		}
-		current_clus = retFatNextClus(current_clus);
-	} while (!chainEnd(current_clus) && !done);
+		thisClus = retFatNextClus(thisClus);
+	} while (!chainEnd(thisClus) && !finish);
 	return 1;
 }
 
@@ -1674,7 +1677,7 @@ int emptyDir(union dirEntry *dir) {
 unsigned short retHiVal(unsigned int clus) {
 	unsigned short hi;
 	hi = (unsigned short)clus >> 16;
-	if (endianness) {
+	if (endianVar) {
 		hi = switch16(hi);
 	}
 	return hi;
@@ -1684,7 +1687,7 @@ unsigned short retHiVal(unsigned int clus) {
 unsigned short retLoVal(unsigned int clus) {
 	unsigned short lo;
 	lo = (unsigned short)clus & 0xFFFF;
-	if (endianness) {
+	if (endianVar) {
 		lo = switch16(lo);
 	}
 	return lo;
@@ -1692,14 +1695,14 @@ unsigned short retLoVal(unsigned int clus) {
 
 // returns the time in the FAT32 format
 unsigned short retTime(void){
-	time_t rawtime;
-	struct tm * cur_time;
+	time_t timeFatForm;
+	struct tm * timeNow;
 	unsigned short t;
 
-	time(&rawtime);
-	cur_time = localtime(&rawtime);
-	t = ((cur_time->tm_hour*0x0800)+(cur_time->tm_min*0x0020)+(cur_time->tm_sec/2));
-	if (endianness) {
+	time(&timeFatForm);
+	timeNow = localtime(&timeFatForm);
+	t = ((timeNow->tm_hour*0x0800)+(timeNow->tm_min*0x0020)+(timeNow->tm_sec/2));
+	if (endianVar) {
 		t = switch16(t);
 	}
 	return t;
@@ -1707,14 +1710,14 @@ unsigned short retTime(void){
 
 // returns the date in the FAT32 format
 unsigned short retDate(void){
-	time_t rawtime;
-	struct tm * cur_time;
+	time_t timeFatForm;
+	struct tm * timeNow;
 	unsigned short d;
 
-	time(&rawtime);
-	cur_time = localtime(&rawtime);
-	d = (((cur_time->tm_year-80)*0x0200)+((cur_time->tm_mon+1)*0x0020)+(cur_time->tm_mday));
-	if (endianness) {
+	time(&timeFatForm);
+	timeNow = localtime(&timeFatForm);
+	d = (((timeNow->tm_year-80)*0x0200)+((timeNow->tm_mon+1)*0x0020)+(timeNow->tm_mday));
+	if (endianVar) {
 		d = switch16(d);
 	}
 	return d;
@@ -1723,16 +1726,16 @@ unsigned short retDate(void){
 // searches for the next open cluster in the FAT
 unsigned int lookupOpenClus() {
 	unsigned int value;	//cluster data
-	unsigned int found = 1;	//free space found
-	unsigned int i;			//counter
-	for (i = 2; i < count_of_clusters; ++i) {
+	unsigned int searched = 1;	//free space searched
+	unsigned int i;			//counterer
+	for (i = 2; i < numClus; ++i) {
 		value = retFatNextClus(i);
 		if (value == 0){
-			found = 0;
+			searched = 0;
 			break;
 		}
 	}
-	if (found == 1){
+	if (searched == 1){
 		error_no_more_space();
 		return 0;
 	}
@@ -1740,23 +1743,23 @@ unsigned int lookupOpenClus() {
 }
 
 // finds the next available directory entry
-unsigned int lookupOpenDirEntry(unsigned int directory_clus, union dirEntry *ptr, unsigned int *clus_ptr, unsigned int *offset_ptr) {
-	unsigned int current_clus, i, limit, found;
+unsigned int lookupOpenDirEntry(unsigned int dirClus, union dirEntry *ptr, unsigned int *ptrClus, unsigned int *ptrOff) {
+	unsigned int thisClus, i, bound, searched;
 	union dirEntry file;
-	current_clus = directory_clus;
-	limit = img_info.bytes_per_sec*img_info.sec_per_clus/32;
-	found = 0;
+	thisClus = dirClus;
+	bound = imageData.bytes_per_sec*imageData.sec_per_clus/32;
+	searched = 0;
 	do {
-		for (i = 0; i < limit; ++i) {
-			retDirEntry(&file, current_clus, i);
+		for (i = 0; i < bound; ++i) {
+			retDirEntry(&file, thisClus, i);
 			if (file.raw_bytes[0] == 0x00) {
-				setEntryNull(current_clus, i);
+				setEntryNull(thisClus, i);
 				*ptr = file;
-				found = 1;
+				searched = 1;
 				break;
 			} else if (file.raw_bytes[0] == 0xE5) {
 				*ptr = file;
-				found = 1;
+				searched = 1;
 				break;
 			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
 				continue;
@@ -1764,46 +1767,46 @@ unsigned int lookupOpenDirEntry(unsigned int directory_clus, union dirEntry *ptr
 				continue;
 			}
 		}
-		if (found) {
-			if (clus_ptr != NULL) {
-				*clus_ptr = current_clus;
+		if (searched) {
+			if (ptrClus != NULL) {
+				*ptrClus = thisClus;
 			}
-			if (offset_ptr != NULL) {
-				*offset_ptr = i;
+			if (ptrOff != NULL) {
+				*ptrOff = i;
 			}
 			return 1;
 		}
-		current_clus = retFatNextClus(current_clus);
-	} while (!chainEnd(current_clus));
+		thisClus = retFatNextClus(thisClus);
+	} while (!chainEnd(thisClus));
 	return 0;
 }
 
 // sets the next directory entry to 0x00. Expands the directory if necessary
-int setEntryNull(unsigned int directory_clus, unsigned int entry_num) {
+int setEntryNull(unsigned int dirClus, unsigned int entryDig) {
 	union dirEntry file;
-	unsigned int first_dir_clus, entry_first_byte_offset, next_num;
-	next_num = entry_num + 1;
-	if ((entry_first_byte_offset = 32*next_num) >= img_info.bytes_per_sec*img_info.sec_per_clus) {
-		if (chainEnd(retFatNextClus(directory_clus))) {
-			expClus(directory_clus);
+	unsigned int firstDirClus, entryByteOff, nextDig;
+	nextDig = entryDig + 1;
+	if ((entryByteOff = 32*nextDig) >= imageData.bytes_per_sec*imageData.sec_per_clus) {
+		if (chainEnd(retFatNextClus(dirClus))) {
+			expClus(dirClus);
 		}
-		first_dir_clus = retSecClus(retFatNextClus(directory_clus));
-		entry_first_byte_offset -= img_info.bytes_per_sec*img_info.sec_per_clus;
+		firstDirClus = retSecClus(retFatNextClus(dirClus));
+		entryByteOff -= imageData.bytes_per_sec*imageData.sec_per_clus;
 	} else {
-		first_dir_clus = retSecClus(directory_clus);
+		firstDirClus = retSecClus(dirClus);
 	}
-	rChar(&file, entry_first_byte_offset + first_dir_clus*img_info.bytes_per_sec, sizeof(union dirEntry));
+	rChar(&file, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
 	file.raw_bytes[0] = 0x00;
-	wChar(&file, entry_first_byte_offset + first_dir_clus*img_info.bytes_per_sec, sizeof(union dirEntry));
+	wChar(&file, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
 	return 1;
 }
 
 // function for making room in the file
-int expClus(unsigned int old_clus) {
+int expClus(unsigned int oldClus1) {
 	unsigned int new_clus;
 	new_clus = lookupOpenClus();
 	if (new_clus != 0) {
-		changeFats(old_clus, new_clus);
+		changeFats(oldClus1, new_clus);
 		changeFats(new_clus, END_OF_CHAIN);
 	}
 	return 1;
