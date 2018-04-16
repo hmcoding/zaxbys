@@ -12,6 +12,19 @@
 
 struct list *opened_files;
 
+
+int my_info(){
+	printf("Bytes per Sector: %d\n", img_info.bytes_per_sec);
+	printf("Sectors per Cluster: %d\n", img_info.sec_per_clus);
+	printf("Total Sectors: %d\n",img_info.tot_sec32);
+	printf("Sectors per FAT: %d\n", img_info.fat_sz32);
+	printf("Number of FATs: %d\n", img_info.num_fat);
+
+	return 0;
+}
+
+
+
 int my_open(char **cmd_args) {
 	int found;
 	union directory_entry file;
