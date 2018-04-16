@@ -8,7 +8,6 @@
 #include "tools.h"
 #include "file_types.h"
 
-
 int endianness;
 FILE *fat32_img;
 struct fat32_info img_info;
@@ -16,6 +15,7 @@ unsigned int first_data_sec;
 unsigned int first_root_sec;
 char *current_directory;
 unsigned int cur_dir_sec;
+
 
 
 int main(int argc, char *argv[]) {
@@ -33,16 +33,17 @@ int main(int argc, char *argv[]) {
 	}
 	status = 1;
 	while (status) {
-		print_prompt();
-		if((cmd_line = read_input()) == NULL) {
+
+		displayPrompt();
+		if((cmd_line = readIn()) == NULL) {
 			fprintf(stderr, "Bad read, try again\n");
 			continue;
 		}
 		cmd_args = parse(cmd_line);
-		status = execute_cmd(cmd_args);
-		clean_up_loop(cmd_line, cmd_args);
+		status = userCmd(cmd_args);
+		loopClean(cmd_line, cmd_args);
 	}
-	clean_up_globals();
+	globClean();
 
 	return 0;
 }
