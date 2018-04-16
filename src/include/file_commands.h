@@ -1,6 +1,7 @@
 #ifndef COMMANDS_H__
 #define COMMANDS_H__
 
+int my_info();
 int my_open(char **cmd_args);
 int my_close(char **cmd_args);
 int my_create(char **cmd_args);
