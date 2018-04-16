@@ -1,18 +1,18 @@
 #ifndef DIRECTORY_H__
 #define DIRECTORY_H__
 
-union directory_entry;
+union dirEntry;
 
 // commands for directories
-int my_cd(char **cmd_args);
-int my_ls(char **cmd_args);
-int my_mkdir(char **cmd_args);
-int my_rmdir(char **cmd_args);
+int cdCmd(char **cmd_args);
+int lsCmd(char **cmd_args);
+int mkdirCmd(char **cmd_args);
+int rmdirCmd(char **cmd_args);
 
 // useful sub routines for directories
-int print_directory(unsigned int directory_clus);
-int change_directory_cluster(union directory_entry *ptr);
-int change_current_directory(union directory_entry *ptr);
+int displayDir(unsigned int directory_clus);
+int changeDirClus(union dirEntry *ptr);
+int changeCurDir(union dirEntry *ptr);
 unsigned int find_penultimate_slash();
 
 #endif
