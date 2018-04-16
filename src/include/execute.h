@@ -3,6 +3,6 @@
 
 
 // Execute call
-int execute_cmd(char **cmd_args);
+int userCmd(char **cmd_args);
 
 #endif
