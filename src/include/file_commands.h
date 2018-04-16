@@ -1,16 +1,15 @@
 #ifndef COMMANDS_H__
 #define COMMANDS_H__
 
-int my_info();
-int my_open(char **cmd_args);
-int my_close(char **cmd_args);
-int my_create(char **cmd_args);
-int my_rm(char **cmd_args);
-int my_size(char **cmd_args);
-int my_read(char **cmd_args);
-int my_write(char **cmd_args);
-int print_help(void);
-int my_exit(void);
+int infoCmd();
+int openCmd(char **cmd_args);
+int closeCmd(char **cmd_args);
+int createCmd(char **cmd_args);
+int rmCmd(char **cmd_args);
+int sizeCmd(char **cmd_args);
+int readCmd(char **cmd_args);
+int writeCmd(char **cmd_args);
+int exitCmd(void);
 
 
 #endif
