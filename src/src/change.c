@@ -67,9 +67,9 @@ int cdCmd(char **progArgs) {
 	if (progArgs[1] != NULL) {
 		check = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
 		if (!check) {
-			error_cd_not_here(progArgs[1]);
+			error(12, progArgs[1]);
 		} else if((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
-			error_cd_file(progArgs[1]);
+			error(11, progArgs[1]);
 		} else { // it's a directory
 			changeDirClus(&file);
 			changeCurDir(&file);
@@ -89,10 +89,10 @@ int lsCmd(char **progArgs) {
 	} else {
 		check = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
 		if (!check) {
-			error_cd_not_here(progArgs[1]);
+			error(12, progArgs[1]);
 			return 0;
 		} else if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
-			error_cd_file(progArgs[1]);
+			error(11, progArgs[1]);
 			return 0;
 		} else {
 			DirClus = retFileClus(&file);
@@ -108,11 +108,11 @@ int mkdirCmd(char **progArgs) {
 	union dirEntry file;
 	unsigned int DirClus, offset;
 	if (progArgs[1] == NULL) {
-		error_specify_file(progArgs[0]);
+		error(9, progArgs[0]);
 	} else {
 		check = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (check) {
-			error_file_or_directory_exists(progArgs[1]);
+			error(19, progArgs[1]);
 		} else {
 			makeDir(progArgs[1], thisDirClus);
 		}
@@ -127,15 +127,15 @@ int rmdirCmd(char **progArgs) {
 	unsigned int DirClus, offset;
 	nameFile = progArgs[1];
 	if (nameFile == NULL) {
-		error_specify_directory(progArgs[0]);                
+		error(10, progArgs[0]);
 	} else {
 		check = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (!check) {
-			error_open_no_file(progArgs[1]);
+			error(2, progArgs[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
-			error_bad_directory(progArgs[1]);
+			error(11, progArgs[1]);
 		} else if (!emptyDir(&file)) {
-			error_not_empty(progArgs[1]);
+			error(18, progArgs[1]);
 		} else {
 			fileDel(&file, DirClus, offset);
 		}
@@ -151,6 +151,7 @@ int displayDir(unsigned int dirClus) {
 	bound = imageData.bytes_per_sec*imageData.sec_per_clus/32;
 	finish = 0;
 	do {
+		
 		for (i = 0; i < bound; ++i) {
 			retDirEntry(&file, thisClus, i);
 			if (file.raw_bytes[0] == 0x00) {
@@ -172,6 +173,8 @@ int displayDir(unsigned int dirClus) {
 				// bad file
 			}
 		}
+	
+		
 		thisClus = retFatNextClus(thisClus);
 	} while (!chainEnd(thisClus) && !finish);
 	return 1;
@@ -233,7 +236,11 @@ unsigned int lookupNextToLastSlash() {
 /* userCmd
  *
  */
+
+
 int userCmd(char **progArgs) {
+	
+	
 	if (progArgs[0] == NULL) {
 		// do nothing
 	} else if (strcmp(progArgs[0], "open") == 0) {
@@ -265,6 +272,9 @@ int userCmd(char **progArgs) {
 	}  else {
 		printf("command: %s: Command is not recognized\n", progArgs[0]);
 	}
+	
+	
+	
 	return 1;
 }
 
@@ -295,20 +305,20 @@ int openCmd(char **progArgs) {
 	unsigned int fileClus, DirClus, offset;
 	struct node *ptrToFile;
 	if (progArgs[1] == NULL || progArgs[2] == NULL) {
-		error_specify_file_and_mode(progArgs[0]);
+		error(8,progArgs[0]);
 	} else {
 		check = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (!check) {
-			error_open_no_file(progArgs[1]);
+			error(2,progArgs[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			error_open_directory(progArgs[1]);
+			error(3,progArgs[1]);
 		} else if (toByte(progArgs[2]) == 0x0) {
-			error_open_bad_param(progArgs[2]);
+			error(4,progArgs[2]);
 		} else {
 			fileClus = retFileClus(&file);
 			ptrToFile = theOpen->find(theOpen, fileClus);
 			if (ptrToFile != NULL) {
-				error_open_already(progArgs[1]);
+				error(1,progArgs[1]);
 			} else {
 				file.sf.last_acc_date = retDate();
 				setDirEntry(&file, DirClus, offset);
@@ -325,18 +335,18 @@ int closeCmd(char **progArgs) {
 	unsigned int fileClus;
 	struct node *ptrToFile;
 	if (progArgs[1] == NULL) {
-		error_specify_file(progArgs[0]);
+		error(9, progArgs[0]);
 	} else {
 		check = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
 		if (!check) {
-			error_open_no_file(progArgs[1]);
+			error(2,progArgs[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			error_close_directory(progArgs[1]);
+			error(5, progArgs[1]);
 		} else {
 			fileClus = retFileClus(&file);
 			ptrToFile = theOpen->find(theOpen, fileClus);
 			if (ptrToFile == NULL) {
-				error_not_open(progArgs[1]);
+				error(6,progArgs[1]);
 			} else {
 				theOpen->remove(theOpen, fileClus);
 			}
@@ -350,11 +360,11 @@ int createCmd(char **progArgs) {
 	union dirEntry file;
 	unsigned int DirClus, offset;
 	if (progArgs[1] == NULL) {
-		error_specify_file(progArgs[0]);
+		error(9, progArgs[0]);
 	} else {
 		check = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (check) {
-			error_file_or_directory_exists(progArgs[1]);
+			error(19, progArgs[1]);
 		} else {
 			makeFile(progArgs[1], thisDirClus);
 		}
@@ -370,13 +380,13 @@ int rmCmd(char **progArgs) {
 	struct node *ptrToFile;
 	nameFile = progArgs[1];
 	if (nameFile == NULL) {
-		error_specify_file(progArgs[0]);                
+		error(9, progArgs[0]);
 	} else {
 		check = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (!check) {
-			error_open_no_file(progArgs[1]);
+			error(2,progArgs[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			error_remove_directory(progArgs[1]);
+			error(20,progArgs[1]);
 		} else {
 			fileClus = retFileClus(&file);
 			ptrToFile = theOpen->find(theOpen, fileClus);
@@ -393,11 +403,11 @@ int sizeCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
 	if (progArgs[1] == NULL) {
-		error_specify_file(progArgs[0]);
+		error(9, progArgs[0]);
 	} else {
 		check = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
 		if (!check) {
-			error_open_no_file(progArgs[1]);
+			error(2,progArgs[1]);
 		} else {
 			printf("%u\n", retSize(&file));
 		}
@@ -412,26 +422,26 @@ int readCmd(char **progArgs) {
 	unsigned int fileClus, location, size, sizeFile, DirClus, offset;
 	struct node *ptrToFile;
 	if (progArgs[1] == NULL || progArgs[2] == NULL || progArgs[3] == NULL) {
-		error_specify_file_pos_size(progArgs[0]);
+		error(13, progArgs[0]);
 	} else {
 		fNames = progArgs[1];
 		location = strtoul(progArgs[2], NULL, 10);
 		size = strtoul(progArgs[3], NULL, 10);
 		check = lookupFile(fNames, thisDirClus, &file, &DirClus, &offset);
 		if (!check) {
-			error_open_no_file(fNames);
+			error(2,fNames);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			error_close_directory(fNames);
+			error(5, fNames);
 		} else {
 			fileClus = retFileClus(&file);
 			ptrToFile = theOpen->find(theOpen, fileClus);
 			sizeFile = retSize(&file);
 			if (ptrToFile == NULL) {
-				error_not_open(fNames);
+				error(6, fNames);
 			} else if (!readCheck(ptrToFile)) {
-				error_not_readable(fNames);
+				error(15, fNames);
 			} else if (location + size > sizeFile) {
-				error_beyond_EOF(location, size, sizeFile);
+				printf("Error: %u + %u > %u: attempt to read beyond EOF\n", location, size, sizeFile);
 			} else {
 				file.sf.last_acc_date = retTime();
 				setDirEntry(&file, DirClus, offset);
@@ -450,7 +460,7 @@ int writeCmd(char **progArgs) {
 	unsigned int fileClus, location, size, DirClus, offset, lengthStr, sizeOrig;
 	struct node *ptrToFile;
 	if (progArgs[1] == NULL || progArgs[2] == NULL || progArgs[3] == NULL || progArgs[4] == NULL) {
-		error_specify_file_pos_size_str(progArgs[0]);
+		error(14, progArgs[0]);
 	} else {
 		fNames = progArgs[1];
 		str = progArgs[4];
@@ -464,18 +474,18 @@ int writeCmd(char **progArgs) {
 		}
 		check = lookupFile(fNames, thisDirClus, &file, &DirClus, &offset);
 		if (!check) {
-			error_open_no_file(fNames);
+			error(2,fNames);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			error_close_directory(fNames);
+			error(5, fNames);
 		} else {
 			fileClus = retFileClus(&file);
 			ptrToFile = theOpen->find(theOpen, fileClus);
 			if (ptrToFile == NULL) {
-				error_not_open(fNames);
+				error(6, fNames);
 			} else if (!writeCheck(ptrToFile)) {
-				error_not_writeable(fNames);
+				error(16, fNames);
 			} else if (location > UINT_MAX - size) {
-				error_too_large(location, size);
+				printf("Error: %u + %u > %u: attempt to make file too large\n", location, size, UINT_MAX);
 			} else {
 				fileW(&file, location, size, str);
 				file.sf.last_acc_date = retTime();
@@ -1020,7 +1030,7 @@ char *remMidWhite(char *progLine){
 			tmp++;
 			if (checkQuotes == 0){
 				if (checkLastQuote(ptr)){
-					error_dangling_quote();
+					printf("Error: closing quotation missing!\n");
 					progLine[0] = 0;
 					break;	
 				}
@@ -1239,112 +1249,73 @@ void displayIntro(char *fNamesImage, char *nameRun) {
 
 // ERROR
 
-//parsing errors
-void error_dangling_quote(){
-	printf("Error: closing quotation missing!\n");
+// ONE ARG
+
+void error(int type, char* print){
+	switch(type){
+		case 1:
+		printf("Error: %s: file already open!\n", print);
+		break;
+		case 2:
+		printf("Error: %s: file does not exist\n", print);
+		break;
+		case 3:
+		printf("Error: %s: cannot open directory\n", print);
+		break;
+		case 4:
+		printf("Error: %s: incorrect parameter\n", print);
+		break;
+		case 5:
+		printf("Error: %s: cannot close directory\n", print);
+		break;
+		case 6:
+		printf("Error: %s: file not open\n", print);
+		break;
+		case 7:
+		printf("Error: %s: file already exists\n", print);
+		break;
+		case 8:
+		printf("Error: %s: please specify a file name and mode\n", print);
+		break;
+		case 9:
+		printf("Error: %s: please specify a file name\n", print);
+		break;
+		case 10:
+		printf("Error: %s: please specify a directory name\n", print);
+		break;
+		case 11:
+		printf("Error: %s: not a directory\n", print);
+		break;
+		case 12:
+		printf("Error: %s: does not exist\n", print);
+		break;
+		case 13:
+		printf("Error: %s: please specify a file name, location, and size\n", print);
+		break;
+		case 14:
+		printf("Error: %s: please specify a file name, location, size, and string\n", print);
+		break;
+		case 15:
+		printf("Error: %s: this file is not open in read mode\n", print);
+		break;
+		case 16:
+		printf("Error: %s: File is not open for writing\n", print);
+		break;
+		case 17:
+		printf("Error: %s: not a directory\n", print);
+		break;
+		case 18:
+		printf("Error: %s: directory not empty\n", print);
+		break;
+		case 19:
+		printf("Error: %s: file or directory exists already\n", print);
+		break;
+		case 20:
+		printf("Error: %s: not a file\n", print);
+		break;
+	}
 }
 
-
-// open/close errors
-void error_open_already(char *fNames) {
-	printf("Error: %s: file already open!\n", fNames);
-}
-
-void error_open_no_file(char *fNames) {
-	printf("Error: %s: file does not exist\n", fNames);
-}
-
-void error_open_directory(char *directory) {
-	printf("Error: %s: cannot open directory\n", directory);
-}
-
-void error_open_bad_param(char *param) {
-	printf("Error: %s: incorrect parameter\n", param);
-}
-
-void error_close_directory(char *directory) {
-	printf("Error: %s: cannot close directory\n", directory);
-}
-
-void error_not_open(char *fNames) {
-	printf("Error: %s: file not open\n", fNames);
-}
-
-
-// create errors
-void error_used_file(char *nameFile) {
-	printf("Error: %s: file already exists\n", nameFile);
-}
-
-void error_specify_file_and_mode(char *command){
-	printf("Error: %s: please specify a file name and mode\n", command);
-} 
-
-void error_specify_file(char *command){
-	printf("Error: %s: please specify a file name\n", command);
-} 
-
-void error_specify_directory(char *command){
-	printf("Error: %s: please specify a directory name\n", command);
-} 
-
-void error_no_more_space(){
-	printf("Error: No more space available on the image!\n");
-}
-
-
-// ls, cd errors
-void error_cd_file(char *fNames) {
-	printf("Error: %s: not a directory\n", fNames);
-}
-
-void error_cd_not_here(char *directory) {
-	printf("Error: %s: does not exist\n", directory);
-}
-
-
-// read/write errors
-void error_specify_file_pos_size(char *command) {
-	printf("Error: %s: please specify a file name, location, and size\n", command);
-}
-
-void error_specify_file_pos_size_str(char *command) {
-	printf("Error: %s: please specify a file name, location, size, and string\n", command);
-}
-
-void error_not_readable(char *fNames) {
-	printf("Error: %s: this file is not open in read mode\n", fNames);
-}
-
-void error_beyond_EOF(unsigned int location, unsigned int size, unsigned int sizeFile) {
-	printf("Error: %u + %u > %u: attempt to read beyond EOF\n", location, size, sizeFile);
-}
-
-void error_not_writeable(char *fNames) {
-	printf("Error: %s: File is not open for writing\n", fNames);
-}
-
-void error_too_large(unsigned int location, unsigned int size) {
-	printf("Error: %u + %u > %u: attempt to make file too large\n", location, size, UINT_MAX);
-}
-
-
-// other
-void error_bad_directory(char *fNames) {
-	printf("Error: %s: not a directory\n", fNames);
-}
-
-void error_not_empty(char *directory) {
-	printf("Error: %s: directory not empty\n", directory);
-}
-
-void error_file_or_directory_exists(char *fNames) {
-	printf("Error: %s: file or directory exists already\n", fNames);
-}
-
-void error_remove_directory(char *directory) {
-	printf("Error: %s: not a file\n", directory);
-}
 
 
 
@@ -1736,7 +1707,7 @@ unsigned int lookupOpenClus() {
 		}
 	}
 	if (searched == 1){
-		error_no_more_space();
+		printf("Error: No more space available on the image!\n");
 		return 0;
 	}
 	return i;
