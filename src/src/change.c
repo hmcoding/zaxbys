@@ -706,36 +706,60 @@ int exitCmd(void) {
 int retDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig) {
 	unsigned int firstDirClus, entryByteOff;
 	firstDirClus = retSecClus(dirClus);
-	
+	/*
 	if ((entryByteOff = 32*entryDig) >= imageData.bytes_per_sec*imageData.sec_per_clus) {
 		// bad offset
 		return 0;
+	}*/
+	
+	if (((entryByteOff = 32*entryDig) > imageData.bytes_per_sec*imageData.sec_per_clus) || ((entryByteOff = 32*entryDig) == imageData.bytes_per_sec*imageData.sec_per_clus)) {
+		// bad offset
+		return 0;
 	}
-	rChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
+	long addVal = entryByteOff + firstDirClus*imageData.bytes_per_sec;
+	rChar(ptr, addVal, sizeof(union dirEntry));
+	//rChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
 	return 1;
 }
 
 int setDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig) {
 	unsigned int firstDirClus, entryByteOff;
 	firstDirClus = retSecClus(dirClus);
+	/*
 	if ((entryByteOff = 32*entryDig) >= imageData.bytes_per_sec*imageData.sec_per_clus) {
 		// bad offset
 		return 0;
+	}*/
+	
+	if (((entryByteOff = 32*entryDig) > imageData.bytes_per_sec*imageData.sec_per_clus) || ((entryByteOff = 32*entryDig) == imageData.bytes_per_sec*imageData.sec_per_clus)) {
+		// bad offset
+		return 0;
 	}
-	wChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
+	
+	long addVal = entryByteOff + firstDirClus*imageData.bytes_per_sec;
+	wChar(ptr, addVal, sizeof(union dirEntry));
+	//wChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
 	return 1;
 }
 
 int retNextDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig) {
 	unsigned int firstDirClus, entryByteOff, nextDig;
 	nextDig = entryDig + 1;
+	/*
 	if ((entryByteOff = 32*nextDig) >= imageData.bytes_per_sec*imageData.sec_per_clus) {
+		firstDirClus = retSecClus(retFatNextClus(dirClus));
+		entryByteOff -= imageData.bytes_per_sec*imageData.sec_per_clus;
+	}*/
+	if (((entryByteOff = 32*nextDig) > imageData.bytes_per_sec*imageData.sec_per_clus) || ((entryByteOff = 32*nextDig) == imageData.bytes_per_sec*imageData.sec_per_clus)) {
 		firstDirClus = retSecClus(retFatNextClus(dirClus));
 		entryByteOff -= imageData.bytes_per_sec*imageData.sec_per_clus;
 	} else {
 		firstDirClus = retSecClus(dirClus);
 	}
-	rChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
+	
+	long addVal = entryByteOff + firstDirClus*imageData.bytes_per_sec;
+	rChar(ptr, addVal, sizeof(union dirEntry));
+	//rChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
 	return 1;
 }
 
@@ -779,6 +803,7 @@ int addList(struct list *theList, unsigned int fileClus, char *mode) {
 	struct node *addNode;
 	unsigned char options;
 	options = toByte(mode);
+	/*
 	if ((theList->find(theList, fileClus) == NULL) && (options != 0x0)) {
 		addNode = calloc(1, sizeof(struct node));
 		addNode->fst_fileClus = fileClus;
@@ -787,7 +812,20 @@ int addList(struct list *theList, unsigned int fileClus, char *mode) {
 		theList->head = addNode;
 		++(theList->size);
 		return 1;
+	}*/
+	
+	if ((theList->find(theList, fileClus) == NULL)){
+		if (options != 0x0){
+			addNode = calloc(1, sizeof(struct node));
+			addNode->fst_fileClus = fileClus;
+			addNode->options = options;
+			addNode->next = theList->head;
+			theList->head = addNode;
+			++(theList->size);
+			return 1;
+		}
 	}
+	
 	return 0;
 }
 
@@ -850,18 +888,32 @@ unsigned char toByte(char *mode) {
 }
 
 int readCheck(struct node *file) {
+	/*
 	if ((file->options & OPEN_READ) == OPEN_READ) {
 		return 1;
 	} else {
 		return 0;
+	}*/
+	
+	if ((file->options & OPEN_READ) != OPEN_READ) {
+		return 0;
+	} else {
+		return 1;
 	}
+	
 }
 
 int writeCheck(struct node *file) {
-	if ((file->options & OPEN_WRITE) == OPEN_WRITE) {
+	/*if ((file->options & OPEN_WRITE) == OPEN_WRITE) {
 		return 1;
 	} else {
 		return 0;
+	}*/
+	
+	if ((file->options & OPEN_WRITE) != OPEN_WRITE) {
+		return 0;
+	} else {
+		return 1;
 	}
 }
 
@@ -891,11 +943,19 @@ int fileR(union dirEntry *file, unsigned int location, unsigned int size) {
 		offset -= clusBytes;
 	}
 	posByte = imageData.bytes_per_sec*retSecClus(thisClus) + offset;
+	/*
 	if (remainBytes > clusBytes - offset) {
 		use = clusBytes - offset;
 	} else {
 		use = remainBytes;
+	}*/
+	
+	if (remainBytes <= clusBytes - offset) {
+		use = remainBytes;
+	} else {
+		use = clusBytes - offset;
 	}
+	
 	rChar(buff, posByte, use);
 	fwrite(buff, sizeof(char), use, stdout);
 	remainBytes -= use;
@@ -906,11 +966,19 @@ int fileR(union dirEntry *file, unsigned int location, unsigned int size) {
 			return 0;
 		}
 		posByte = imageData.bytes_per_sec*retSecClus(thisClus);
+		/*
 		if (remainBytes < clusBytes) {
 			use = remainBytes;
 		} else {
 			use = clusBytes;
+		}*/
+		
+		if (remainBytes >= clusBytes) {
+			use = clusBytes;
+		} else {
+			use = remainBytes;
 		}
+		
 		rChar(buff, posByte, use);
 		fwrite(buff, sizeof(char), use, stdout);
 		remainBytes -= use;
@@ -933,11 +1001,19 @@ int fileW(union dirEntry *file, unsigned int location, unsigned int size, char *
 		offset -= clusBytes;
 	}
 	posByte = imageData.bytes_per_sec*retSecClus(thisClus) + offset;
+	/*
 	if (remainBytes > clusBytes - offset) {
 		use = clusBytes - offset;
 	} else {
 		use = remainBytes;
+	}*/
+	
+	if (remainBytes <= clusBytes - offset) {
+		use = remainBytes;
+	} else {
+		use = clusBytes - offset;
 	}
+	
 	wChar(&str[begin], posByte, use);
 	remainBytes -= use;
 	begin += use;
@@ -947,11 +1023,19 @@ int fileW(union dirEntry *file, unsigned int location, unsigned int size, char *
 			expClus(thisClus);
 		}
 		posByte = imageData.bytes_per_sec*retSecClus(thisClus);
+		/*
 		if (remainBytes < clusBytes) {
 			use = remainBytes;
 		} else {
 			use = clusBytes;
+		}*/
+		
+		if (remainBytes >= clusBytes) {
+			use = clusBytes;
+		} else {
+			use = remainBytes;
 		}
+		
 		wChar(&str[begin], posByte, use);
 		remainBytes -= use;
 		begin += use;
@@ -981,11 +1065,19 @@ int fileDel(union dirEntry *ptrToFile, unsigned int dirClus, unsigned int entryD
 	}
 
 	retNextDirEntry(&fileNext, dirClus, entryDig);
+	/*
 	if (fileNext.raw_bytes[0] == 0x00) {
 		ptrToFile->raw_bytes[0] = 0x00;
 	} else {
 		ptrToFile->raw_bytes[0] = 0xE5;
+	}*/
+	
+	if (fileNext.raw_bytes[0] != 0x00) {
+		ptrToFile->raw_bytes[0] = 0xE5;
+	} else {
+		ptrToFile->raw_bytes[0] = 0x00;
 	}
+	
 	delList(theClus);
 	setDirEntry(ptrToFile, dirClus, entryDig);
 	return 1;
@@ -1028,26 +1120,37 @@ int makeFile(char *nameFile, unsigned int dirClus) {
 
 int makeDir(char *dir_name, unsigned int dirClus) {
 	unsigned int clus, offset, dClus1, dOff1, dClus2, dOff2, newDirClus;
-	union dirEntry file, d_file, dd_file; // CHANGE HERE
+	union dirEntry file, dFile1, dFile2; // CHANGE HERE
 	makeDirEntry(dir_name, dirClus, &file, &clus, &offset, 1);
 	file.sf.attr = 0x10;
 	setDirEntry(&file, clus, offset);
 	newDirClus = retFileClus(&file);
-	makeDirEntry(".", newDirClus, &d_file, &dClus1, &dOff1, 0);
-	d_file.sf.first_clus_hi = retHiVal(newDirClus);
-	d_file.sf.first_clus_lo = retLoVal(newDirClus);
-	d_file.sf.attr = 0x10;
-	setDirEntry(&d_file, dClus1, dOff1);
-	makeDirEntry("..", newDirClus, &dd_file, &dClus2, &dOff2, 0);
+	makeDirEntry(".", newDirClus, &dFile1, &dClus1, &dOff1, 0);
+	dFile1.sf.first_clus_hi = retHiVal(newDirClus);
+	dFile1.sf.first_clus_lo = retLoVal(newDirClus);
+	dFile1.sf.attr = 0x10;
+	setDirEntry(&dFile1, dClus1, dOff1);
+	makeDirEntry("..", newDirClus, &dFile2, &dClus2, &dOff2, 0);
+	/*
 	if (dirClus == imageData.root_clus) {
-		dd_file.sf.first_clus_hi = 0x0000;
-		dd_file.sf.first_clus_lo = 0x0000;
+		dFile2.sf.first_clus_hi = 0x0000;
+		dFile2.sf.first_clus_lo = 0x0000;
 	} else {
-		dd_file.sf.first_clus_hi = retHiVal(dirClus);
-		dd_file.sf.first_clus_lo = retLoVal(dirClus);
+		dFile2.sf.first_clus_hi = retHiVal(dirClus);
+		dFile2.sf.first_clus_lo = retLoVal(dirClus);
+	}*/
+	
+	if (dirClus != imageData.root_clus) {
+		dFile2.sf.first_clus_hi = retHiVal(dirClus);
+		dFile2.sf.first_clus_lo = retLoVal(dirClus);
+	} else {
+		dFile2.sf.first_clus_hi = 0x0000;
+		dFile2.sf.first_clus_lo = 0x0000;
 	}
-	dd_file.sf.attr = 0x10;
-	setDirEntry(&dd_file, dClus2, dOff2);
+	
+	
+	dFile2.sf.attr = 0x10;
+	setDirEntry(&dFile2, dClus2, dOff2);
 	return 1;
 }
 
@@ -1064,6 +1167,7 @@ int makeDir(char *dir_name, unsigned int dirClus) {
  */
 char *readIn() {
 	char *progLine = calloc(INPUT_BUFFER_SIZE, sizeof(char));
+	
 	if (fgets(progLine, INPUT_BUFFER_SIZE, stdin)) {
 		return progLine;
 	} else {
@@ -1164,6 +1268,7 @@ size_t trackArgs(char *progLine) {
 	size_t counter;
 	checkQuotes = 0;
 	counter = 0;
+	/*
 	for (i = 0; progLine[i] != '\0'; ++i) {
 		if (progLine[i] == ' ' && !checkQuotes) {
 			++counter;
@@ -1173,7 +1278,35 @@ size_t trackArgs(char *progLine) {
 		} else if (progLine[i] == '\"' && checkQuotes) {
 			checkQuotes = 0;
 		}
+	}*/
+	
+	i = 0;
+	while (progLine[i] != '\0') {
+		/*
+		if (progLine[i] == ' ' && !checkQuotes) {
+			++counter;
+		} else if (progLine[i] == '\"' && !checkQuotes) {
+			++counter;
+			checkQuotes = 1;
+		} else if (progLine[i] == '\"' && checkQuotes) {
+			checkQuotes = 0;
+		}*/
+		
+		if (progLine[i] == '\"' && !checkQuotes) {
+			++counter;
+			checkQuotes = 1;
+		} else if (progLine[i] == '\"' && checkQuotes) {
+			checkQuotes = 0;
+		} else if (progLine[i] == ' ' && !checkQuotes) {
+			++counter;
+		}
+		
+		
+		
+		++i;
 	}
+	
+	
 	return counter + 1;
 }
 
@@ -1215,6 +1348,7 @@ char *remMidWhite(char *progLine){
 	int checkQuotes = 0;
 	int counterWhite = 0;
 	while (*ptr != 0) {
+		/*
 		if (*ptr == '"'){
 			*tmp = *ptr;
 			tmp++;
@@ -1243,7 +1377,52 @@ char *remMidWhite(char *progLine){
 			*tmp = *ptr;
 			tmp++;
 			counterWhite = 0;
+		}*/
+		
+		if (checkQuotes){
+			*tmp = *ptr;
+			tmp++;
+			counterWhite = 0;
+		} else if (*ptr == '"'){
+			*tmp = *ptr;
+			tmp++;
+			/*
+			if (checkQuotes == 0){
+				if (checkLastQuote(ptr)){
+					printf("Error: closing quotation missing!\n");
+					progLine[0] = 0;
+					break;	
+				}
+				checkQuotes = 1;
+			} else {
+				checkQuotes = 0;
+			} */
+			
+			
+			if (checkQuotes != 0) {
+				checkQuotes = 0;
+			} else {
+				if (checkLastQuote(ptr)){
+					printf("Error: closing quotation missing!\n");
+					progLine[0] = 0;
+					break;	
+				}
+				checkQuotes = 1;
+			}
+
+		} else if (isspace(*ptr)) {
+			if (counterWhite == 0) {
+				*tmp = ' ';
+				tmp++;
+			}
+			counterWhite++;
+		} else {
+			*tmp = *ptr;
+			tmp++;
+			counterWhite = 0;
 		}
+		
+		
 		ptr++;
 	}
 	*tmp = '\0';
@@ -1274,6 +1453,7 @@ char *addMidWhite(char *progLine){
 	char *ptr = progLine;
 	int i = 0;
 	while (*ptr != 0) {
+		/*
 		switch (*ptr) {
 			case '|':
 			case '<':
@@ -1294,7 +1474,28 @@ char *addMidWhite(char *progLine){
 			default:
 				tmp[i++] = *ptr;
 				++ptr;
+		}*/
+		
+		if (*ptr == '|' || *ptr == '<' || *ptr == '>' || *ptr == '&') {
+			if (i > 0 && tmp[i - 1] != ' ') {
+				tmp[i++] = ' ';
+			}
+			tmp[i++] = *ptr;
+			if (*(ptr + 1) != ' ') {
+				tmp[i++] = ' ';
+			} else if ((ptr + 1) != 0) {
+				tmp[i++] = ' ';
+				++ptr;
+			}
+			++ptr;
+			break;
+
+		} else {
+			tmp[i++] = *ptr;
+			++ptr;
 		}
+		
+		
 	}
 	tmp[i] = '\0';
 	if (!trackCmdSize(tmp)) {
@@ -1327,11 +1528,21 @@ char *remTrailWhite(char *progLine){
  */
 int trackCmdSize(char *progLine) {
 	int i;
+	/*
 	for (i = 0; i < INPUT_BUFFER_SIZE; ++i) {
 		if (progLine[i] == '\0') {
 			return 1;
 		}
+	}*/
+	
+	i = 0;
+	while (i < INPUT_BUFFER_SIZE) {
+		if (progLine[i] == '\0') {
+			return 1;
+		}
+		++i;
 	}
+	
 	return 0;
 }
 
@@ -1350,10 +1561,20 @@ void ridCmdLine(char *progLine) {
  */
 void ridCmdArgs(char **progArgs) {
 	int i;
+	/*
 	for (i = 0; progArgs[i] != NULL; ++i) {
 		free(progArgs[i]);
 		progArgs[i] = NULL;
+	}*/
+	
+	i = 0;
+	while (progArgs[i] != NULL) {
+		free(progArgs[i]);
+		progArgs[i] = NULL;
+		++i;
 	}
+	
+	
 	free(progArgs);
 }
 
