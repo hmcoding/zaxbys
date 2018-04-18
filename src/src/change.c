@@ -251,7 +251,7 @@ int displayDir(unsigned int dirClus) {
 		
 		for (i = 0; i < bound; ++i) {
 			retDirEntry(&file, thisClus, i);
-			/*
+			
 			if (file.raw_bytes[0] == 0x00) {
 				finish = 1;
 				break;
@@ -269,25 +269,6 @@ int displayDir(unsigned int dirClus) {
 				continue;
 			} else {
 				// bad file
-			}*/
-			
-			if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
-							continue;
-			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == 0x00) {
-				shortLow(fNames, file.sf.name);
-				printf("%s\t", fNames);
-			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_DIRECTORY) {
-				shortLow(fNames, file.sf.name);
-				printf("%s/\t", fNames);
-			} else if (file.raw_bytes[0] == 0xE5) {
-				continue;
-			} else if (file.raw_bytes[0] == 0x00) {
-				finish = 1;
-				break;
-			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
-				continue;
-			} else {
-				
 			}
 			
 			
@@ -374,6 +355,7 @@ unsigned int lookupNextToLastSlash() {
 			lastSlash = i;
 		}
 	}*/
+	
 	i = 1;
 	while (thisDir[i] != '\0'){
 		if (thisDir[i] == '/') {
@@ -382,6 +364,7 @@ unsigned int lookupNextToLastSlash() {
 		}
 		++i;
 	}
+	
 	
 	return ntlSlash;
 }
@@ -712,12 +695,17 @@ int retDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig
 		return 0;
 	}*/
 	
+	
+	//NEW
 	if (((entryByteOff = 32*entryDig) > imageData.bytes_per_sec*imageData.sec_per_clus) || ((entryByteOff = 32*entryDig) == imageData.bytes_per_sec*imageData.sec_per_clus)) {
 		// bad offset
 		return 0;
 	}
 	long addVal = entryByteOff + firstDirClus*imageData.bytes_per_sec;
 	rChar(ptr, addVal, sizeof(union dirEntry));
+	//NEW end
+	
+	
 	//rChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
 	return 1;
 }
@@ -731,6 +719,8 @@ int setDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig
 		return 0;
 	}*/
 	
+
+	//NEW
 	if (((entryByteOff = 32*entryDig) > imageData.bytes_per_sec*imageData.sec_per_clus) || ((entryByteOff = 32*entryDig) == imageData.bytes_per_sec*imageData.sec_per_clus)) {
 		// bad offset
 		return 0;
@@ -738,18 +728,25 @@ int setDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig
 	
 	long addVal = entryByteOff + firstDirClus*imageData.bytes_per_sec;
 	wChar(ptr, addVal, sizeof(union dirEntry));
-	//wChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
+	//NEW emd
+	
+	
+		//wChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
 	return 1;
 }
 
 int retNextDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig) {
 	unsigned int firstDirClus, entryByteOff, nextDig;
 	nextDig = entryDig + 1;
-	/*
+	
 	if ((entryByteOff = 32*nextDig) >= imageData.bytes_per_sec*imageData.sec_per_clus) {
 		firstDirClus = retSecClus(retFatNextClus(dirClus));
 		entryByteOff -= imageData.bytes_per_sec*imageData.sec_per_clus;
-	}*/
+	} else {
+		firstDirClus = retSecClus(dirClus);
+	}
+
+	//NEW
 	if (((entryByteOff = 32*nextDig) > imageData.bytes_per_sec*imageData.sec_per_clus) || ((entryByteOff = 32*nextDig) == imageData.bytes_per_sec*imageData.sec_per_clus)) {
 		firstDirClus = retSecClus(retFatNextClus(dirClus));
 		entryByteOff -= imageData.bytes_per_sec*imageData.sec_per_clus;
@@ -759,7 +756,8 @@ int retNextDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entr
 	
 	long addVal = entryByteOff + firstDirClus*imageData.bytes_per_sec;
 	rChar(ptr, addVal, sizeof(union dirEntry));
-	//rChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
+	//NEW end
+		//rChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
 	return 1;
 }
 
@@ -826,6 +824,8 @@ int addList(struct list *theList, unsigned int fileClus, char *mode) {
 		}
 	}
 	
+	
+	
 	return 0;
 }
 
@@ -888,6 +888,7 @@ unsigned char toByte(char *mode) {
 }
 
 int readCheck(struct node *file) {
+	
 	/*
 	if ((file->options & OPEN_READ) == OPEN_READ) {
 		return 1;
@@ -904,17 +905,17 @@ int readCheck(struct node *file) {
 }
 
 int writeCheck(struct node *file) {
-	/*if ((file->options & OPEN_WRITE) == OPEN_WRITE) {
-		return 1;
-	} else {
-		return 0;
-	}*/
-	
-	if ((file->options & OPEN_WRITE) != OPEN_WRITE) {
-		return 0;
-	} else {
-		return 1;
-	}
+/*if ((file->options & OPEN_WRITE) == OPEN_WRITE) {
+	return 1;
+} else {
+	return 0;
+}*/
+
+if ((file->options & OPEN_WRITE) != OPEN_WRITE) {
+	return 0;
+} else {
+	return 1;
+}
 }
 
 unsigned int retSize(union dirEntry *file) {
