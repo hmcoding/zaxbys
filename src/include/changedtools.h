@@ -6,46 +6,46 @@
 #define NEXT_CLUS_MASK 0x0FFFFFFF
 
 // forward declaration of type from another header file
-union dirEntry;
+union dirEntry;   
 
-int rChar(void *ptr, long pos, size_t use);
-int wChar(void *ptr, long pos, size_t use);
+unsigned short low(unsigned int clustr);  //retloval  //clus
+unsigned short high(unsigned int clustr);   //rethival
 
-unsigned short retLoVal(unsigned int clus);
-unsigned short retHiVal(unsigned int clus);
+int readChar(void *ptr, long p, size_t use);     //rChar
+int writeChar(void *ptr, long p, size_t use);     //wChar
+int wrChar(void *ptr, long p, size_t use);     //////////////////////////combo of read and write char 
 
+int c_endian(void);   //check_endian
 
-unsigned int *readUnInt(unsigned int *ptr, long pos);
-unsigned int *writeUnInt(unsigned int *ptr, long pos);
-unsigned short *readUnSh(unsigned short *ptr, long pos);
-unsigned short *writeUnSh(unsigned short *ptr, long pos);
-unsigned char *readUnCh(unsigned char *ptr, long pos);
-unsigned int switch32(unsigned int val);
-unsigned short switch16(unsigned short val);
+unsigned int RCS(unsigned int clustr);
+unsigned long RFCP(unsigned int clustr, unsigned int fat);
+unsigned int RFNC(unsigned int clustr);
+unsigned int RFNC_true(unsigned int clustr);
+int endofchain(unsigned int clustr);
+int changeF(unsigned int fileClus, unsigned int v);   //changeFat
 
-int check_endian(void);
+unsigned int *RUInt(unsigned int *ptr, long p);   //readUnInt
+unsigned int *WUInt(unsigned int *ptr, long p);    //writeUnInt
+unsigned short *RUSh(unsigned short *ptr, long p);   //readUnSh
+unsigned short *WUSh(unsigned short *ptr, long p);    //writeUnSh
+unsigned char *RUCh(unsigned char *ptr, long p);
+unsigned int S32(unsigned int v);
+unsigned short S16(unsigned short v);
 
-unsigned int retSecClus(unsigned int clus);
-unsigned long retFatClusPos(unsigned int clus, unsigned int fat);
-unsigned int retFatNextClus(unsigned int clus);
-unsigned int retFatNextClus_true(unsigned int clus);
-int chainEnd(unsigned int clus);
-int changeFats(unsigned int fileClus, unsigned int value);
+int SLow(char fNames[12], char shNames[11]);  //shortlow
+int fShort(char fNames[12], char shNames[11]);  //fileshort
+int filelookup(char *fNames, unsigned int dirClus, union dirEntry *ptr, unsigned int *ptrClus, unsigned int *ptrOff);  //lookupfile
+unsigned int RFC(union dirEntry *ptr);  //retfileclus
+//there was an extra rethival and retloval functions
+//unsigned short retHiVal(unsigned int clus);
+//unsigned short retLoVal(unsigned int clus);
+int emptyD(union dirEntry *dir);   //emptyDir
 
-int shortLow(char fNames[12], char shNames[11]);
-int fileShort(char fNames[12], char shNames[11]);
-int lookupFile(char *fNames, unsigned int dirClus, union dirEntry *ptr, unsigned int *ptrClus, unsigned int *ptrOff);
-unsigned int retFileClus(union dirEntry *ptr);
-unsigned short retHiVal(unsigned int clus);
-unsigned short retLoVal(unsigned int clus);
-int emptyDir(union dirEntry *dir);
+int SENull(unsigned int dirClus, unsigned int entryDig);  //setentrynull
+int e_Clustr(unsigned int oldClus1);   //expClus
 
-unsigned short retTime(void);
-unsigned short int retDate(void);
+unsigned short RTime(void);  //rettime
+unsigned short int RDate(void);    //retdate
 
-unsigned int lookupOpenClus(void);
-unsigned int lookupOpenDirEntry(unsigned int dirClus, union dirEntry *ptr, unsigned int *ptrClus, unsigned int *ptrOff);
-
-int setEntryNull(unsigned int dirClus, unsigned int entryDig);
-int expClus(unsigned int oldClus1);
-#endif
+unsigned int luOpenClus(void);  //lookup
+unsigned int luOpenDirEntry(unsigned int dirClus, union dirEntry *ptr, unsigned int *ptrClus, unsigned int *ptrOff);   //lookup
