@@ -2,9 +2,9 @@
 FAT32 Filesystem
 
 Group Member's:
-	- Michael Duckett (mgd08d)
-	- Alekhya Gade (ag13aj)
-	- Travis Hett (tah12c)
+	- Holly Culver
+	- Abigail Perry
+	- Hunter Davis
 
 Contents:
 	- Readme
