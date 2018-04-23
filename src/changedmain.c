@@ -30,13 +30,13 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 
-	if (!setup(argv[1], argv[0])) {
+	if (!setup(argv[1], argv[0])) {       //setup -> su
 		return 0;
 	}
 	program = 1;
 	while (program) {
 
-		displayPrompt();
+		displayPrompt();     //displayprompt -> showprompt
 		if((progLine = readIn()) == NULL) {
 			fprintf(stderr, "Bad read, try again\n");
 			continue;
