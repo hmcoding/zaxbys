@@ -1880,20 +1880,22 @@ unsigned short *readUnSh(unsigned short *ptr, long pos) {
 	return ptr;
 }
 
+
+
 // writes an unsigned short to fatImage at pos
 unsigned short *writeUnSh(unsigned short *ptr, long pos) {
 	long offset;
 	unsigned short tmp;
 	offset = pos - ftell(fatImage);
-	if (endianVar) {
-		tmp = switch16(*ptr);
-	} else {
-		tmp = *ptr;
-	}
-	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {   //swapped with if(endianVar)
 		perror(NULL);
 		return NULL;
 	}
+	if(endianVar)              ///removed the { and } from if and else
+		tmp = switch16(*ptr);
+	else 
+		tmp = *ptr;
+	
 	if (fwrite(&tmp, sizeof(unsigned short), 1, fatImage) != 1) {
 		perror(NULL);
 		return NULL;
@@ -1904,92 +1906,99 @@ unsigned short *writeUnSh(unsigned short *ptr, long pos) {
 // reads an unsigned char from fatImage at pos
 unsigned char *readUnCh(unsigned char *ptr, long pos) {
 	long offset = pos - ftell(fatImage);
+	if (fread(ptr, sizeof(char), 1, fatImage) != 1) {        //swapped fread and fseek
+		perror(NULL);
+		return NULL;
+	}
 	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
 	}
-	if (fread(ptr, sizeof(char), 1, fatImage) != 1) {
-		perror(NULL);
-		return NULL;
-	}
+	
 	return ptr;
 }
 
 // writes an unsigned char to fatImage at pos
 unsigned int switch32(unsigned int val) {
-	return ((val>>24)&0xff) | ((val<<8)&0xff0000) | ((val>>8)&0xff00) | ((val<<24)&0xff000000);
+	return ((val >> 24) & 0xff) | ((val << 8) & 0xff0000) | ((val >> 8) & 0xff00) | ((val << 24) & 0xff000000);  //cant really change this
 }
 
 unsigned short switch16(unsigned short val) {
-	return (val<<8) | (val>>8);
+	return (val << 8) | (val >> 8);   //cant really change this
 }
 
 int check_endian(void) {
-	int num = 1;
-	if(*(char *)&num == 1) {
+	int num;    //int num = 1;
+	num = 1;
+	if (*(char *)&num == 1)                 //got rid of if and elses {  }
 		return 0; // little endian
-	} else {
+	else 
 		return 1; // big endian
-	}
 }
 
 // follows the formula from the FAT32 specifications
 unsigned int retSecClus(unsigned int clus) {
-	return (clus - 2)*imageData.spc + dataSec;
+	return (clus - 2)*imageData.spc + dataSec;    //cant really change this
 }
 
 /* returns the absolute location of the given cluster in the given FAT in terms
- * of bytes
- */
-unsigned long retFatClusPos(unsigned int clus, unsigned int fat) {
+* of bytes
+*/
+unsigned long retFatClusPos(unsigned int clus, unsigned int fat) {    //cant really change this
 	unsigned int i, beginSecFAT;
 	i = fat < imageData.n_fat ? fat : 0;
 	beginSecFAT = imageData.rsvd_s_c + i*imageData.fsz32;
-	return beginSecFAT*imageData.bps + 4*clus;
+	return beginSecFAT*imageData.bps + 4 * clus;
 }
 
 /* returns the next cluster in the chain
- */
+*/
 unsigned int retFatNextClus(unsigned int clus) {
-	unsigned long location;
 	unsigned int nextClus;
-	location = retFatClusPos(clus, 0);
+	unsigned long location = retFatClusPos(clus, 0);   
+	//location = retFatClusPos(clus, 0);
 	readUnInt(&nextClus, location);
 	return nextClus & NEXT_CLUS_MASK;
 }
 
 // same as above but doesn't apply the NEXT_CLUS_MASK to result
 unsigned int retFatNextClus_true(unsigned int clus) {
-	unsigned long location;
 	unsigned int nextClus;
-	location = retFatClusPos(clus, 0);
+	unsigned long location = retFatClusPos(clus, 0);
+	//location = retFatClusPos(clus, 0);
 	readUnInt(&nextClus, location);
 	return nextClus;
 }
 
 // checks if the value is one of the end of chain values
 int chainEnd(unsigned int clus) {
-	if ((clus & END_OF_CHAIN) == END_OF_CHAIN) {
+	if ((clus & END_OF_CHAIN) == END_OF_CHAIN)              //got rid of the { and }
 		return 1;
-	} else {
+	else
 		return 0;
-	}
 }
 
 // changes the values in all file allocation tables at fileClus to "value"
 int changeFats(unsigned int fileClus, unsigned int value) {
 	unsigned long location;
-	int i;
-	for (i = 0; i < imageData.n_fat; ++i) {
+	//int i;
+	/*for (i = 0; i < imageData.n_fat; ++i) {
 		location = retFatClusPos(fileClus, i);
 		writeUnInt(&value, location);
+	}*/
+	int i = 0;
+	while(i < imageData.n_fat)
+	{
+		location = retFatClusPos(fileClus, i);
+		writeUnInt(&value, location);
+		++i;
 	}
 	return 1;
 }
 
 // takes a short name and stores transformed name to fNames
 int shortLow(char fNames[12], char shNames[11]) {
-	int i, j;
+	/*int i, j;
 	for (i = 0, j = 0; i < 11; ++i) {
 		if (shNames[i] != ' ') {
 			if (i == 8) {
@@ -2000,37 +2009,77 @@ int shortLow(char fNames[12], char shNames[11]) {
 	}
 	for (j = j; j < 12; ++j) {
 		fNames[j] = '\0';
+	}*/
+	int i = 0, j = 0;
+	while(i < 11)
+	{
+		if (shNames[i] != ' ') 
+		{
+			if (i == 8)
+				fNames[j++] = '.';
+			fNames[j++] = tolower(shNames[i]);
+		}
+		++i;
+	}
+	j = j;
+	while(j < 12)
+	{
+		fNames[j] = '\0';
+		++j;
 	}
 	return 1;
 }
 
 // takes fNames and stores "short name transformed" string in shNames
 int fileShort(char fNames[12], char shNames[11]) {
-	int i, j;
-	if (strcmp(fNames, ".") == 0) {
+	//int i, j;
+	if (strcmp(fNames, ".") == 0) 
+	{
 		strcpy(shNames, ".          ");
 		return 1;
-	} else if (strcmp(fNames, "..") == 0) {
+	}
+	else if (strcmp(fNames, "..") == 0) 
+	{
 		strcpy(shNames, "..         ");
 		return 1;
 	}
-	i = 0, j = 0;
-	while (i < 8 && fNames[j] != '.' && fNames[j] !='\0') {
+	/*i = 0, j = 0;
+	while (i < 8 && fNames[j] != '.' && fNames[j] != '\0') 
+	{
 		shNames[i++] = toupper(fNames[j++]);
-	}
-	for (i = i; i < 8; i++) {
+	}*/
+	do
+	{
+		shNames[i++] = toupper(fNames[j++]);
+	}while(i < 8 && fNames[j] != '.' && fNames[j] != '\0');
+	/*for (i = i; i < 8; i++) {
 		shNames[i] = ' ';
+	}*/
+	i = i;
+	while(i < 8)
+	{
+		shNames[i] = ' ';
+		i++;
 	}
-	if (fNames[j++] == '.') {
-		while (i < 11 && fNames != '\0') {
+	if (fNames[j++] == '.') 
+	{
+		while (i < 11 && fNames != '\0') 
+		{
 			shNames[i++] = toupper(fNames[j++]);
 		}
 	}
-	for (i = i; i < 11; ++i) {
+	/*for (i = i; i < 11; ++i) {
 		shNames[i] = ' ';
+	}*/
+	i = i;
+	while(i < 11)
+	{
+		shNames[i] = ' ';
+		++i;
 	}
 	return 1;
 }
+
 
 // finds the file in the given directory entry with name "fNames". returns 1
 // if a file is searched and 0 if no file is searched
