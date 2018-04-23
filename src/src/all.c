@@ -459,58 +459,89 @@ int userCmd(char **progArgs) {
 
 
 int infoCmd(){
-	printf("Number of FATs: %d\n", imageData.n_fat);
-	printf("Bytes per Sector: %d\n", imageData.bps);
-	printf("Total Sectors: %d\n",imageData.tsec32);
-	printf("Sectors per FAT: %d\n", imageData.fsz32);
-	printf("Sectors per Cluster: %d\n", imageData.spc);
+	printf("Number of FATs: %d\n", imageData.num_fat);
+	printf("Bytes per Sector: %d\n", imageData.bytes_per_sec);
+	printf("Total Sectors: %d\n",imageData.tot_sec32);
+	printf("Sectors per FAT: %d\n", imageData.fat_sz32);
+	printf("Sectors per Cluster: %d\n", imageData.sec_per_clus);
 
 	return 0;
 }
 
 
 
-int openCmd(char **progArgs) {
+int openCmd(char **progArgs) { //changed
 	int doCheck;
 	union dirEntry file;
 	unsigned int doFile, doDir, offset;
 	struct node *ptrFile;
 	if (progArgs[2] == NULL || progArgs[1] == NULL) {
 		error(8,progArgs[0]);
-	} 
+	}
+/*    else {
+                doCheck = lookupFile(progArgs[1], thisDirClus, &file, &doDir, &offset);
+                if (!doCheck) {
+                        error(2,progArgs[1]);
+                } else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+                        error(3,progArgs[1]);
+                } else if (toByte(progArgs[2]) == 0x0) {
+                        error(4,progArgs[2]);
+                } else {
+                        doFile = retFileClus(&file);
+                        ptrFile = theOpen->find(theOpen, doFile);
+                        if (ptrFile != NULL) {
+                                error(1,progArgs[1]);
+                        } else {
+                                file.sf.last_acc_date = retDate();
+                                setDirEntry(&file, doDir, offset);
+                                theOpen->add(theOpen, retFileClus(&file), progArgs[2]);
+                        }
+                }
+*/
+
 	else {
 		doCheck = lookupFile(progArgs[1], thisDirClus, &file, &doDir, &offset);
 		if (!doCheck) {
 			error(2,progArgs[1]);
-		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-			error(3,progArgs[1]);
-		} else if (toByte(progArgs[2]) == 0x0) {
+		}
+		else if (toByte(progArgs[2]) == 0x0) {
 			error(4,progArgs[2]);
-		} else {
+		}
+		else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+			error(3,progArgs[1]);
+		}
+		else {
 			doFile = retFileClus(&file);
 			ptrFile = theOpen->find(theOpen, doFile);
-			if (ptrFile != NULL) {
+		/*	if (ptrFile != NULL) {
 				error(1,progArgs[1]);
 			} else {
 				file.sf.last_acc_date = retDate();
 				setDirEntry(&file, doDir, offset);
 				theOpen->add(theOpen, retFileClus(&file), progArgs[2]);
 			}
+		*/
+			if (ptrFile == NULL) {
+				file.sf.last_acc_date = retDate();
+				setDirEntry(&file, doDir, offset);
+				theOpen->add(theOpen, retFileClus(&file), progArgs[2]);
+			}
+			 else {
+				error(1,progArgs[1]);
+			}
 		}
 	}
 	return 0;
 }
 
-int closeCmd(char **progArgs) {
+int closeCmd(char **progArgs) { //changed
 	union dirEntry file;
 	int doCheck;
 	struct node *ptrFile;
 	unsigned int fileClus;
 
-	if (progArgs[1] == NULL) {
-		error(9, progArgs[0]);
-	} else {
-		doCheck = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
+	if (progArgs[1] != NULL) {
+	doCheck = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
 		if (!doCheck) {
 			error(2,progArgs[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
@@ -518,44 +549,62 @@ int closeCmd(char **progArgs) {
 		} else {
 			fileClus = retFileClus(&file);
 			ptrFile = theOpen->find(theOpen, fileClus);
-			if (ptrFile == NULL) {
-				error(6,progArgs[1]);
-			} else {
+			if (ptrFile != NULL) {
 				theOpen->remove(theOpen, fileClus);
+			} else {
+				error(6,progArgs[1]);
 			}
 		}
+	} else {
+			error(9, progArgs[0]);
 	}
 	return 0;
 }
 
-int createCmd(char **progArgs) {
+int createCmd(char **progArgs) { //changed
 	union dirEntry file;
 	int doCheck;
 	unsigned int DirClus, offset;
-	if (progArgs[1] == NULL) {
+
+/*	if (progArgs[1] == NULL) {
 		error(9, progArgs[0]);
-	} else {
+	}
+	else {
 		doCheck = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (doCheck) {
 			error(19, progArgs[1]);
-		} else {
+		}
+		else {
 			makeFile(progArgs[1], thisDirClus);
 		}
 	}
+*/
+	if (progArgs[1] != NULL) {
+	doCheck = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
+		if (doCheck) {
+			error(19, progArgs[1]);
+		}
+		else {
+			makeFile(progArgs[1], thisDirClus);
+		}
+	}
+	else {
+	     error(9, progArgs[0]);
+	}
+
+
 	return 0;
 }
 
-int rmCmd(char **progArgs) {
+int rmCmd(char **progArgs) { //changed 
 union dirEntry file;
 	int doCheck;
 	char *nameFile;
 	struct node *ptrFile;
 	unsigned int fileClus, DirClus, offset;
 	nameFile = progArgs[1];
-	if (nameFile == NULL) {
-		error(9, progArgs[0]);
-	} else {
-		doCheck = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
+	if (nameFile != NULL) {
+	doCheck = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (!doCheck) {
 			error(2,progArgs[1]);
 		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
@@ -568,34 +617,36 @@ union dirEntry file;
 			}
 			fileDel(&file, DirClus, offset);
 		}
+	} else {
+		error(9, progArgs[0]);
 	}
 	return 0;
 }
 
-int sizeCmd(char **progArgs) {
+int sizeCmd(char **progArgs) { //changed
 	union dirEntry file;
 	int doCheck;
 
-	if (progArgs[1] == NULL) {
-		error(9, progArgs[0]);
-	} else {
-		doCheck = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
-		if (!doCheck) {
-			error(2,progArgs[1]);
-		} else {
+	if (progArgs[1] != NULL) {
+	doCheck = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
+		if (doCheck) {
 			printf("%u\n", retSize(&file));
+		} else {
+			error(2,progArgs[1]);
 		}
+	} else {
+		error(9, progArgs[0]);
 	}
 	return 0;
 }
 
-int readCmd(char **progArgs) {
+int readCmd(char **progArgs) { //changed a little try more
 	union dirEntry file;
 	struct node *ptrFile;
 	int doCheck;
 	unsigned int myFile, myDir, loc, size, sizeFile, offset;
 	char *fNames;
-	
+
 	if (progArgs[1] == NULL || progArgs[2] == NULL || progArgs[3] == NULL) {
 		error(13, progArgs[0]);
 	} else {
@@ -613,11 +664,11 @@ int readCmd(char **progArgs) {
 			sizeFile = retSize(&file);
 			if (ptrFile == NULL) {
 				error(6, fNames);
-			} else if (!readCheck(ptrFile)) {
-				error(15, fNames);
 			} else if (loc + size > sizeFile) {
 				printf("Error: %u + %u > %u: attempt to read beyond EOF\n", loc, size, sizeFile);
-			} else {
+			} else if (!readCheck(ptrFile)) {
+				error(15, fNames);
+			}else {
 				file.sf.last_acc_date = retTime();
 				setDirEntry(&file, myDir, offset);
 				fileR(&file, loc, size);
@@ -635,7 +686,7 @@ int writeCmd(char **progArgs) {
 	char *fNames, *str;
 	int doCheck;
 
-	if (progArgs[1] == NULL || progArgs[2] == NULL || progArgs[3] == NULL || progArgs[4] == NULL) {
+	if (progArgs[4] == NULL || progArgs[3] == NULL || progArgs[2] == NULL || progArgs[1] == NULL) {
 		error(14, progArgs[0]);
 	} else {
 		fNames = progArgs[1];
@@ -643,7 +694,7 @@ int writeCmd(char **progArgs) {
 		sizeOrig = strtoul(progArgs[3], NULL, 10);
 		lengthStr = strlen(str);
 		loc = strtoul(progArgs[2], NULL, 10);
-		
+
 		if (lengthStr > sizeOrig) {
 			size = sizeOrig;
 		} else {
@@ -679,9 +730,6 @@ int exitCmd(void) {
 	printf("Exiting.\n");
 	return 0;
 }
-
-
-
 
 
 
