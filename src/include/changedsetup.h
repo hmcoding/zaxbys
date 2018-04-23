@@ -5,15 +5,15 @@
 
 // struct for the BPB header variables
 struct fatData {
-	unsigned short bytes_per_sec;
-	unsigned char sec_per_clus;
-	unsigned short rsvd_sec_cnt;
-	unsigned char num_fat;
-	unsigned short root_ent_cnt;
-	unsigned int tot_sec32;
-	unsigned int fat_sz32;
-	unsigned short ext_options;
-	unsigned int root_clus;
+	unsigned short bps;
+	unsigned char spc;
+	unsigned short rsvd_s_c;
+	unsigned char n_fat;
+	unsigned short rec;
+	unsigned int tsec32;
+	unsigned int fsz32;
+	unsigned short other_options;
+	unsigned int rclustr;
 };
 
 // global variables 
