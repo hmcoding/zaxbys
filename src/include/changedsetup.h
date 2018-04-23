@@ -5,36 +5,36 @@
 
 // struct for the BPB header variables
 struct fatData {
-	unsigned short bps;    //bytes_per_sec;
-	unsigned short r_e_c;  //root_ent_cnt;
-	unsigned short other_options;   //ext_options;
-	unsigned short rsvd_s_c;   //rsvd_sec_cnt;
-	unsigned char spc;  //sec_per_clus;
-	unsigned char n_fat;   //num_fat;
-	unsigned int tsec32;   //tot_sec32;
-	unsigned int fsz32;   //fat_sz32;
-	unsigned int rclustr;   //root_clus;
+	unsigned short bytes_per_sec;
+	unsigned char sec_per_clus;
+	unsigned short rsvd_sec_cnt;
+	unsigned char num_fat;
+	unsigned short root_ent_cnt;
+	unsigned int tot_sec32;
+	unsigned int fat_sz32;
+	unsigned short ext_options;
+	unsigned int root_clus;
 };
 
-// the setup functions
-int SRD(void);   //setRootDir
-int su(char *fNm_img, char *nm_run);   //setup   fNamesImage   nameRun
-int g_f_info(void);  //getfatinfo
-int Openset(void);   //setOpened
-void showprompt(void);   //displayprompt
-void showintro(char *fNm_img, char *nm_run);   //displayintro
-
-// the global variables 
-extern char *thisDir;
+// global variables 
 extern int endianVar;
 extern FILE *fatImage;
-extern struct fatData imageData;  
-extern struct list *theOpen;
+extern struct fatData imageData;
+extern unsigned int dataSec;
+extern unsigned int rootSec;
+extern char *thisDir;
 extern unsigned int thisDirCap;
 extern unsigned int thisDirClus;
 extern unsigned int thisDirSec;
-extern unsigned int dataSec;
-extern unsigned int rootSec;
+extern struct list *theOpen;
 extern unsigned int numClus;
+
+// setup functions
+int setup(char *fNamesImage, char *nameRun);
+int getFatInfo(void);
+int setRootDir(void);
+int setOpened(void);
+void displayPrompt(void);
+void displayIntro(char *fNamesImage, char *nameRun);
 
 #endif
