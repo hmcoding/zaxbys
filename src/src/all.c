@@ -459,11 +459,11 @@ int userCmd(char **progArgs) {
 
 
 int infoCmd(){
-	printf("Number of FATs: %d\n", imageData.num_fat);
-	printf("Bytes per Sector: %d\n", imageData.bytes_per_sec);
-	printf("Total Sectors: %d\n",imageData.tot_sec32);
-	printf("Sectors per FAT: %d\n", imageData.fat_sz32);
-	printf("Sectors per Cluster: %d\n", imageData.sec_per_clus);
+	printf("Number of FATs: %d\n", imageData.n_fat);
+	printf("Bytes per Sector: %d\n", imageData.bps);
+	printf("Total Sectors: %d\n",imageData.tsec32);
+	printf("Sectors per FAT: %d\n", imageData.fsz32);
+	printf("Sectors per Cluster: %d\n", imageData.spc);
 
 	return 0;
 }
