@@ -245,7 +245,7 @@ int displayDir(unsigned int dirClus) {
 	union dirEntry file;
 	char fNames[12];
 	unsigned int thisClus = dirClus;
-	unsigned int bound = imageData.bytes_per_sec*imageData.sec_per_clus/32;
+	unsigned int bound = imageData.bps*imageData.spc/32;
 	unsigned int finish = 0;
 	do {
 		
@@ -286,7 +286,7 @@ int changeDirClus(union dirEntry *ptr) {
 		fileClus = retFileClus(ptr);
 		/*
 		if (fileClus == 0) {
-			thisDirClus = imageData.root_clus;
+			thisDirClus = imageData.rclustr;
 		} else {
 			thisDirClus = fileClus;
 		}*/
@@ -295,7 +295,7 @@ int changeDirClus(union dirEntry *ptr) {
 			thisDirClus = fileClus;
 		}
 		else {
-			thisDirClus = imageData.root_clus;
+			thisDirClus = imageData.rclustr;
 		}
 	}
 	return 1;
@@ -459,11 +459,11 @@ int userCmd(char **progArgs) {
 
 
 int infoCmd(){
-	printf("Number of FATs: %d\n", imageData.num_fat);
-	printf("Bytes per Sector: %d\n", imageData.bytes_per_sec);
-	printf("Total Sectors: %d\n",imageData.tot_sec32);
-	printf("Sectors per FAT: %d\n", imageData.fat_sz32);
-	printf("Sectors per Cluster: %d\n", imageData.sec_per_clus);
+	printf("Number of FATs: %d\n", imageData.n_fat);
+	printf("Bytes per Sector: %d\n", imageData.bps);
+	printf("Total Sectors: %d\n",imageData.tsec32);
+	printf("Sectors per FAT: %d\n", imageData.fsz32);
+	printf("Sectors per Cluster: %d\n", imageData.spc);
 
 	return 0;
 }
@@ -698,23 +698,23 @@ int retDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig
 	unsigned int firstDirClus, entryByteOff;
 	firstDirClus = retSecClus(dirClus);
 	/*
-	if ((entryByteOff = 32*entryDig) >= imageData.bytes_per_sec*imageData.sec_per_clus) {
+	if ((entryByteOff = 32*entryDig) >= imageData.bps*imageData.spc) {
 		// bad offset
 		return 0;
 	}*/
 	
 	
 	//NEW
-	if (((entryByteOff = 32*entryDig) > imageData.bytes_per_sec*imageData.sec_per_clus) || ((entryByteOff = 32*entryDig) == imageData.bytes_per_sec*imageData.sec_per_clus)) {
+	if (((entryByteOff = 32*entryDig) > imageData.bps*imageData.spc) || ((entryByteOff = 32*entryDig) == imageData.bps*imageData.spc)) {
 		// bad offset
 		return 0;
 	}
-	long addVal = entryByteOff + firstDirClus*imageData.bytes_per_sec;
+	long addVal = entryByteOff + firstDirClus*imageData.bps;
 	rChar(ptr, addVal, sizeof(union dirEntry));
 	//NEW end
 	
 	
-	//rChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
+	//rChar(ptr, entryByteOff + firstDirClus*imageData.bps, sizeof(union dirEntry));
 	return 1;
 }
 
@@ -722,24 +722,24 @@ int setDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig
 	unsigned int firstDirClus, entryByteOff;
 	firstDirClus = retSecClus(dirClus);
 	/*
-	if ((entryByteOff = 32*entryDig) >= imageData.bytes_per_sec*imageData.sec_per_clus) {
+	if ((entryByteOff = 32*entryDig) >= imageData.bps*imageData.spc) {
 		// bad offset
 		return 0;
 	}*/
 	
 
 	//NEW
-	if (((entryByteOff = 32*entryDig) > imageData.bytes_per_sec*imageData.sec_per_clus) || ((entryByteOff = 32*entryDig) == imageData.bytes_per_sec*imageData.sec_per_clus)) {
+	if (((entryByteOff = 32*entryDig) > imageData.bps*imageData.spc) || ((entryByteOff = 32*entryDig) == imageData.bps*imageData.spc)) {
 		// bad offset
 		return 0;
 	}
 	
-	long addVal = entryByteOff + firstDirClus*imageData.bytes_per_sec;
+	long addVal = entryByteOff + firstDirClus*imageData.bps;
 	wChar(ptr, addVal, sizeof(union dirEntry));
 	//NEW emd
 	
 	
-		//wChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
+		//wChar(ptr, entryByteOff + firstDirClus*imageData.bps, sizeof(union dirEntry));
 	return 1;
 }
 
@@ -747,25 +747,25 @@ int retNextDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entr
 	unsigned int firstDirClus, entryByteOff, nextDig;
 	nextDig = entryDig + 1;
 	
-	if ((entryByteOff = 32*nextDig) >= imageData.bytes_per_sec*imageData.sec_per_clus) {
+	if ((entryByteOff = 32*nextDig) >= imageData.bps*imageData.spc) {
 		firstDirClus = retSecClus(retFatNextClus(dirClus));
-		entryByteOff -= imageData.bytes_per_sec*imageData.sec_per_clus;
+		entryByteOff -= imageData.bps*imageData.spc;
 	} else {
 		firstDirClus = retSecClus(dirClus);
 	}
 
 	//NEW
-	if (((entryByteOff = 32*nextDig) > imageData.bytes_per_sec*imageData.sec_per_clus) || ((entryByteOff = 32*nextDig) == imageData.bytes_per_sec*imageData.sec_per_clus)) {
+	if (((entryByteOff = 32*nextDig) > imageData.bps*imageData.spc) || ((entryByteOff = 32*nextDig) == imageData.bps*imageData.spc)) {
 		firstDirClus = retSecClus(retFatNextClus(dirClus));
-		entryByteOff -= imageData.bytes_per_sec*imageData.sec_per_clus;
+		entryByteOff -= imageData.bps*imageData.spc;
 	} else {
 		firstDirClus = retSecClus(dirClus);
 	}
 	
-	long addVal = entryByteOff + firstDirClus*imageData.bytes_per_sec;
+	long addVal = entryByteOff + firstDirClus*imageData.bps;
 	rChar(ptr, addVal, sizeof(union dirEntry));
 	//NEW end
-		//rChar(ptr, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
+		//rChar(ptr, entryByteOff + firstDirClus*imageData.bps, sizeof(union dirEntry));
 	return 1;
 }
 
@@ -938,7 +938,7 @@ unsigned int retSize(union dirEntry *file) {
 int fileR(union dirEntry *file, unsigned int location, unsigned int size) {
 	unsigned int offset, remainBytes, thisClus, clusBytes, posByte, use;
 	char *buff;
-	clusBytes = imageData.bytes_per_sec*imageData.sec_per_clus;
+	clusBytes = imageData.bps*imageData.spc;
 	buff = malloc(sizeof(char)*(clusBytes));
 	offset = location;
 	remainBytes = size;
@@ -951,7 +951,7 @@ int fileR(union dirEntry *file, unsigned int location, unsigned int size) {
 		}
 		offset -= clusBytes;
 	}
-	posByte = imageData.bytes_per_sec*retSecClus(thisClus) + offset;
+	posByte = imageData.bps*retSecClus(thisClus) + offset;
 	/*
 	if (remainBytes > clusBytes - offset) {
 		use = clusBytes - offset;
@@ -974,7 +974,7 @@ int fileR(union dirEntry *file, unsigned int location, unsigned int size) {
 			free(buff);
 			return 0;
 		}
-		posByte = imageData.bytes_per_sec*retSecClus(thisClus);
+		posByte = imageData.bps*retSecClus(thisClus);
 		/*
 		if (remainBytes < clusBytes) {
 			use = remainBytes;
@@ -997,7 +997,7 @@ int fileR(union dirEntry *file, unsigned int location, unsigned int size) {
 
 int fileW(union dirEntry *file, unsigned int location, unsigned int size, char *str) {
 	unsigned int offset, remainBytes, thisClus, clusBytes, posByte, use, begin;
-	clusBytes = imageData.bytes_per_sec*imageData.sec_per_clus;
+	clusBytes = imageData.bps*imageData.spc;
 	offset = location;
 	remainBytes = size;
 	begin = 0;
@@ -1009,7 +1009,7 @@ int fileW(union dirEntry *file, unsigned int location, unsigned int size, char *
 		}
 		offset -= clusBytes;
 	}
-	posByte = imageData.bytes_per_sec*retSecClus(thisClus) + offset;
+	posByte = imageData.bps*retSecClus(thisClus) + offset;
 	/*
 	if (remainBytes > clusBytes - offset) {
 		use = clusBytes - offset;
@@ -1031,7 +1031,7 @@ int fileW(union dirEntry *file, unsigned int location, unsigned int size, char *
 		if (chainEnd(thisClus)) {
 			expClus(thisClus);
 		}
-		posByte = imageData.bytes_per_sec*retSecClus(thisClus);
+		posByte = imageData.bps*retSecClus(thisClus);
 		/*
 		if (remainBytes < clusBytes) {
 			use = remainBytes;
@@ -1141,7 +1141,7 @@ int makeDir(char *dir_name, unsigned int dirClus) {
 	setDirEntry(&dFile1, dClus1, dOff1);
 	makeDirEntry("..", newDirClus, &dFile2, &dClus2, &dOff2, 0);
 	/*
-	if (dirClus == imageData.root_clus) {
+	if (dirClus == imageData.rclustr) {
 		dFile2.sf.first_clus_hi = 0x0000;
 		dFile2.sf.first_clus_lo = 0x0000;
 	} else {
@@ -1149,7 +1149,7 @@ int makeDir(char *dir_name, unsigned int dirClus) {
 		dFile2.sf.first_clus_lo = retLoVal(dirClus);
 	}*/
 	
-	if (dirClus != imageData.root_clus) {
+	if (dirClus != imageData.rclustr) {
 		dFile2.sf.first_clus_hi = retHiVal(dirClus);
 		dFile2.sf.first_clus_lo = retLoVal(dirClus);
 	} else {
@@ -1618,15 +1618,15 @@ int setup(char *fNamesImage, char *nameRun) {
  * sector
  */
 int getFatInfo(void) {
-	readUnSh(&imageData.bytes_per_sec, 11);
-	readUnCh(&imageData.sec_per_clus, 13);
-	readUnSh(&imageData.rsvd_sec_cnt, 14);
-	readUnCh(&imageData.num_fat, 16);
-	readUnSh(&imageData.root_ent_cnt, 17);
-	readUnInt(&imageData.tot_sec32, 32);
-	readUnInt(&imageData.fat_sz32, 36);
-	readUnSh(&imageData.ext_options, 40);
-	readUnInt(&imageData.root_clus, 44);
+	readUnSh(&imageData.bps, 11);
+	readUnCh(&imageData.spc, 13);
+	readUnSh(&imageData.rsvd_s_c, 14);
+	readUnCh(&imageData.n_fat, 16);
+	readUnSh(&imageData.rec, 17);
+	readUnInt(&imageData.tsec32, 32);
+	readUnInt(&imageData.fsz32, 36);
+	readUnSh(&imageData.other_options, 40);
+	readUnInt(&imageData.rclustr, 44);
 	return 0;
 }
 
@@ -1635,11 +1635,11 @@ int getFatInfo(void) {
  */
 int setRootDir(void) {
 	unsigned int funcDataSec;
-	funcDataSec = imageData.tot_sec32 - (imageData.rsvd_sec_cnt + (imageData.num_fat*imageData.fat_sz32));
-	numClus = funcDataSec/imageData.sec_per_clus;
-	dataSec = imageData.rsvd_sec_cnt + (imageData.num_fat*imageData.fat_sz32);
-	rootSec = retSecClus(imageData.root_clus);
-	thisDirClus = imageData.root_clus;
+	funcDataSec = imageData.tsec32 - (imageData.rsvd_s_c + (imageData.n_fat*imageData.fsz32));
+	numClus = funcDataSec/imageData.spc;
+	dataSec = imageData.rsvd_s_c + (imageData.n_fat*imageData.fsz32);
+	rootSec = retSecClus(imageData.rclustr);
+	thisDirClus = imageData.rclustr;
 	thisDirSec = rootSec;
 	thisDirCap = INIT_CUR_DIR_CAP;
 	thisDir = calloc(thisDirCap, sizeof(char));
@@ -1887,7 +1887,7 @@ int check_endian(void) {
 
 // follows the formula from the FAT32 specifications
 unsigned int retSecClus(unsigned int clus) {
-	return (clus - 2)*imageData.sec_per_clus + dataSec;
+	return (clus - 2)*imageData.spc + dataSec;
 }
 
 /* returns the absolute location of the given cluster in the given FAT in terms
@@ -1895,9 +1895,9 @@ unsigned int retSecClus(unsigned int clus) {
  */
 unsigned long retFatClusPos(unsigned int clus, unsigned int fat) {
 	unsigned int i, beginSecFAT;
-	i = fat < imageData.num_fat ? fat : 0;
-	beginSecFAT = imageData.rsvd_sec_cnt + i*imageData.fat_sz32;
-	return beginSecFAT*imageData.bytes_per_sec + 4*clus;
+	i = fat < imageData.n_fat ? fat : 0;
+	beginSecFAT = imageData.rsvd_s_c + i*imageData.fsz32;
+	return beginSecFAT*imageData.bps + 4*clus;
 }
 
 /* returns the next cluster in the chain
@@ -1932,7 +1932,7 @@ int chainEnd(unsigned int clus) {
 int changeFats(unsigned int fileClus, unsigned int value) {
 	unsigned long location;
 	int i;
-	for (i = 0; i < imageData.num_fat; ++i) {
+	for (i = 0; i < imageData.n_fat; ++i) {
 		location = retFatClusPos(fileClus, i);
 		writeUnInt(&value, location);
 	}
@@ -1992,7 +1992,7 @@ int lookupFile(char *fNames, unsigned int dirClus, union dirEntry *ptr, unsigned
 	char shNames[11];
 	fileShort(fNames, shNames);
 	thisClus = dirClus;
-	bound = imageData.bytes_per_sec*imageData.sec_per_clus/32;
+	bound = imageData.bps*imageData.spc/32;
 	finish = 0;
 	do {
 		for (i = 0; i < bound; ++i) {
@@ -2041,7 +2041,7 @@ int emptyDir(union dirEntry *dir) {
 	unsigned int thisClus, i, j, bound, finish;
 	union dirEntry file;
 	thisClus = retFileClus(dir);
-	bound = imageData.bytes_per_sec*imageData.sec_per_clus/32;
+	bound = imageData.bps*imageData.spc/32;
 	finish = 0;
 	j = 0;
 	do {
@@ -2138,7 +2138,7 @@ unsigned int lookupOpenDirEntry(unsigned int dirClus, union dirEntry *ptr, unsig
 	unsigned int thisClus, i, bound, searched;
 	union dirEntry file;
 	thisClus = dirClus;
-	bound = imageData.bytes_per_sec*imageData.sec_per_clus/32;
+	bound = imageData.bps*imageData.spc/32;
 	searched = 0;
 	do {
 		for (i = 0; i < bound; ++i) {
@@ -2177,18 +2177,18 @@ int setEntryNull(unsigned int dirClus, unsigned int entryDig) {
 	union dirEntry file;
 	unsigned int firstDirClus, entryByteOff, nextDig;
 	nextDig = entryDig + 1;
-	if ((entryByteOff = 32*nextDig) >= imageData.bytes_per_sec*imageData.sec_per_clus) {
+	if ((entryByteOff = 32*nextDig) >= imageData.bps*imageData.spc) {
 		if (chainEnd(retFatNextClus(dirClus))) {
 			expClus(dirClus);
 		}
 		firstDirClus = retSecClus(retFatNextClus(dirClus));
-		entryByteOff -= imageData.bytes_per_sec*imageData.sec_per_clus;
+		entryByteOff -= imageData.bps*imageData.spc;
 	} else {
 		firstDirClus = retSecClus(dirClus);
 	}
-	rChar(&file, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
+	rChar(&file, entryByteOff + firstDirClus*imageData.bps, sizeof(union dirEntry));
 	file.raw_bytes[0] = 0x00;
-	wChar(&file, entryByteOff + firstDirClus*imageData.bytes_per_sec, sizeof(union dirEntry));
+	wChar(&file, entryByteOff + firstDirClus*imageData.bps, sizeof(union dirEntry));
 	return 1;
 }
 
