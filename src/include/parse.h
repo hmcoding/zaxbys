@@ -8,9 +8,9 @@
 char *readIn();
 
 
-char **parse(char *progLine);
-char *parseWhite(char *progLine);
-char **parseArgs(char *progLine);
+char **parseFunc(char *progLine);
+char *parseFuncWhite(char *progLine);
+char **parseFuncArgs(char *progLine);
 
 
 char *remLeadWhite(char *progLine);
