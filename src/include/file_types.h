@@ -20,39 +20,39 @@
 
 struct fileShort {
 	char name[11];
-	unsigned char attr;
+	unsigned char trait;
 	unsigned char ntr;
-	unsigned char crt_time_tenth;
-	unsigned short crt_time;
-	unsigned short crt_date;
-	unsigned short last_acc_date;
-	unsigned short first_clus_hi;
-	unsigned short wrt_time;
-	unsigned short wrt_date;
-	unsigned short first_clus_lo;
+	//unsigned char timeCRT_tenth;
+	unsigned short timeCRT;
+	unsigned short dateCRT;
+	unsigned short dateLast;
+	unsigned short initHiClus;
+	unsigned short timeWRT;
+	unsigned short dateWRT;
+	unsigned short intitLoClus;
 	unsigned int sizeFile;
 };
 
 struct fileLong {
-	unsigned char ord;
-	char name1[10];
-	unsigned char attr;
-	unsigned char type;
-	unsigned char check_sum;
-	char name2[12];
-	unsigned short first_clus_lo;
-	char name3[4];
+	//unsigned char ord;
+	//char name1[10];
+	unsigned char trait;
+	//unsigned char type;
+	//unsigned char check_sum;
+	//char name2[12];
+	unsigned short intitLoClus;
+	//char name3[4];
 };
 
 union dirEntry {
-	unsigned char raw_bytes[32];
-	struct fileShort sf;
-	struct fileLong lf;
+	unsigned char natBytes[32];
+	struct fileShort shFi;
+	struct fileLong lonFi;
 };
 
 // singlely-linked list definition
 struct node {
-	unsigned int fst_fileClus;
+	unsigned int fileClusFST;
 	unsigned char options;
 	struct node *next;
 };
