@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 
-	if (!setup(argv[1], argv[0])) {
+	if (!toStart(argv[1], argv[0])) {
 		return 0;
 	}
 	program = 1;
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 			fprintf(stderr, "Bad read, try again\n");
 			continue;
 		}
-		progArgs = parse(progLine);
+		progArgs = parseFunc(progLine);
 		program = userCmd(progArgs);
 		loopClean(progLine, progArgs);
 	}
