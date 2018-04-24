@@ -10,7 +10,7 @@ OBJ_DIR=build
 
 SRC_FILES=$(wildcard $(SRC_DIR)/*.c)
 OBJ_FILES=$(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC_FILES))
-TARGET=noticeablyFAT32
+TARGET=fat32program
 
 TEST_DIR=test
 TEST_FILES=$(wildcard $(TEST_DIR)/*.c)
