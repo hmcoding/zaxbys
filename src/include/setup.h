@@ -29,8 +29,8 @@ extern unsigned int thisDirSec;
 extern struct list *theOpen;
 extern unsigned int numClus;
 
-// setup functions
-int setup(char *fNamesImage, char *nameRun);
+// toStart functions
+int toStart(char *fNamesImage, char *nameRun);
 int getFatInfo(void);
 int setRootDir(void);
 int setOpened(void);
