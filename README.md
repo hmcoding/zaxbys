@@ -1,37 +1,24 @@
 # project3
 FAT32 Filesystem
 
-Group Member's:
+Group Member's & Division of Labor:
 	- Holly Culver
 	- Abigail Perry
 	- Hunter Davis
 
 Contents:
 	- Readme
-	- Paper
 	- src
 		- main.c
 		- Makefile
 		- include
-			- clean.h
-			- commands.h
-			- directory.h
-			- execute.h
 			- file_types.h
 			- parse.h
 			- setup.h
-			- shell_error.h
 			- tools.h
+			- utility.h
 		- src
-			- clean.c
-			- commands.c
-			- directory.c
-			- execute.c
-			- file_types.c
-			- parse.c
-			- setup.c
-			- shell_error.c
-			- tools.c
+			- all.c
 
 To compile:
 	$ cd ./src
@@ -39,3 +26,11 @@ To compile:
 
 To execute:
 	$ ./noticeablyFAT32 <FAT32_IMG>
+
+Known bugs:
+
+
+Unfinished portions:
+
+
+Special considerations:
