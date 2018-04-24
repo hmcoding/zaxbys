@@ -25,7 +25,7 @@ To compile:
 	$ make
 
 To execute:
-	$ ./noticeablyFAT32 <FAT32_IMG>
+	$ ./fat32program <FAT32_IMG>
 
 Known bugs:
 
