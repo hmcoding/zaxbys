@@ -8,17 +8,20 @@
 
 
 
-#include "clean.h"
+
+#include "utility.h"
+#include "tools.h"
 #include "parse.h"
 #include "setup.h"
 #include "file_types.h"
+
+/*
 #include "execute.h"
 #include "file_commands.h"
 #include "directory_commands.h"
-#include "tools.h"
 #include "shell_error.h"
-
-
+#include "clean.h"
+*/
 
 
 // VARIABLES FOR ALL FILES
@@ -45,8 +48,22 @@ unsigned int numClus;
 
 
 void loopClean(char *progLine, char **progArgs) {
+	/*
 	ridCmdLine(progLine);
 	ridCmdArgs(progArgs);
+	*/
+	
+	free(progLine);
+	int i;
+		i = 0;
+		while (progArgs[i] != NULL) {
+			free(progArgs[i]);
+			progArgs[i] = NULL;
+			++i;
+		}
+	
+	
+		free(progArgs);
 }
 
 void globClean(void) {
@@ -54,6 +71,10 @@ void globClean(void) {
 	free(thisDir);
 	fclose(fatImage);
 }
+
+
+
+
 // END CLEAN
 
 // DIRECTORY
@@ -64,6 +85,7 @@ void globClean(void) {
 int cdCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
+	
 	if (progArgs[1] != NULL) {
 		check = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
 		/*
@@ -89,11 +111,14 @@ int cdCmd(char **progArgs) {
 		}
 		
 	}
+	
+	
+	
+	
 	return 0;
 }
 
-/* prints the entries in the given directory in progArgs[1]
- */
+
 int lsCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
@@ -152,7 +177,8 @@ int lsCmd(char **progArgs) {
 int mkdirCmd(char **progArgs) {
 	int check;
 	union dirEntry file;
-	unsigned int DirClus, offset;
+	unsigned int DirClus;
+	unsigned int offset;
 	/*
 	if (progArgs[1] == NULL) {
 		error(9, progArgs[0]);
@@ -191,7 +217,8 @@ int rmdirCmd(char **progArgs) {
 	int check;
 	char *nameFile;
 	union dirEntry file;
-	unsigned int DirClus, offset;
+	unsigned int DirClus;
+	unsigned int offset;
 	nameFile = progArgs[1];
 	/*
 	if (nameFile == NULL) {
@@ -333,7 +360,8 @@ int changeCurDir(union dirEntry *ptr) {
 			strcpy(thisDir, "/");
 		} else {
 			if (strlen(thisDir) + strlen(fNames) + 1 > thisDirCap) {
-				thisDirCap *= 2;
+				//thisDirCap *= 2;
+				thisDirCap = thisDirCap * 2;
 				thisDir = realloc(thisDir, thisDirCap);
 			}
 			strcat(thisDir, fNames);
@@ -372,10 +400,6 @@ unsigned int lookupNextToLastSlash() {
 // END DIRECTORY
 
 // EXECUTE
-
-/* userCmd
- *
- */
 
 
 int userCmd(char **progArgs) {
@@ -473,42 +497,31 @@ int infoCmd(){
 int openCmd(char **progArgs) { //changed
 	int doCheck;
 	union dirEntry file;
-	unsigned int doFile, doDir, offset;
+	unsigned int doFile;
+	unsigned int doDir;
+	unsigned int offset;
 	struct node *ptrFile;
+	/*
 	if (progArgs[2] == NULL || progArgs[1] == NULL) {
 		error(8,progArgs[0]);
-	}
-/*    else {
-                doCheck = lookupFile(progArgs[1], thisDirClus, &file, &doDir, &offset);
-                if (!doCheck) {
-                        error(2,progArgs[1]);
-                } else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-                        error(3,progArgs[1]);
-                } else if (toByte(progArgs[2]) == 0x0) {
-                        error(4,progArgs[2]);
-                } else {
-                        doFile = retFileClus(&file);
-                        ptrFile = theOpen->find(theOpen, doFile);
-                        if (ptrFile != NULL) {
-                                error(1,progArgs[1]);
-                        } else {
-                                file.sf.last_acc_date = retDate();
-                                setDirEntry(&file, doDir, offset);
-                                theOpen->add(theOpen, retFileClus(&file), progArgs[2]);
-                        }
-                }
-*/
-
-	else {
+	}*/
+	
+	if (progArgs[2] == NULL) {
+		error(8,progArgs[0]);
+	} else if (progArgs[1] == NULL) {
+		error(8,progArgs[0]);
+	} else {
 		doCheck = lookupFile(progArgs[1], thisDirClus, &file, &doDir, &offset);
+		
+		
 		if (!doCheck) {
 			error(2,progArgs[1]);
 		}
-		else if (toByte(progArgs[2]) == 0x0) {
-			error(4,progArgs[2]);
-		}
 		else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
 			error(3,progArgs[1]);
+		}
+		else if (toByte(progArgs[2]) == 0x0) {
+			error(4,progArgs[2]);
 		}
 		else {
 			doFile = retFileClus(&file);
@@ -530,7 +543,31 @@ int openCmd(char **progArgs) { //changed
 				error(1,progArgs[1]);
 			}
 		}
+		
 	}
+
+/*    else {
+                doCheck = lookupFile(progArgs[1], thisDirClus, &file, &doDir, &offset);
+                if (!doCheck) {
+                        error(2,progArgs[1]);
+                } else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+                        error(3,progArgs[1]);
+                } else if (toByte(progArgs[2]) == 0x0) {
+                        error(4,progArgs[2]);
+                } else {
+                        doFile = retFileClus(&file);
+                        ptrFile = theOpen->find(theOpen, doFile);
+                        if (ptrFile != NULL) {
+                                error(1,progArgs[1]);
+                        } else {
+                                file.sf.last_acc_date = retDate();
+                                setDirEntry(&file, doDir, offset);
+                                theOpen->add(theOpen, retFileClus(&file), progArgs[2]);
+                        }
+                }
+*/
+
+	
 	return 0;
 }
 
@@ -564,7 +601,8 @@ int closeCmd(char **progArgs) { //changed
 int createCmd(char **progArgs) { //changed
 	union dirEntry file;
 	int doCheck;
-	unsigned int DirClus, offset;
+	unsigned int DirClus;
+	unsigned int offset;
 
 /*	if (progArgs[1] == NULL) {
 		error(9, progArgs[0]);
@@ -581,12 +619,21 @@ int createCmd(char **progArgs) { //changed
 */
 	if (progArgs[1] != NULL) {
 	doCheck = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
+	/*
 		if (doCheck) {
 			error(19, progArgs[1]);
 		}
 		else {
 			makeFile(progArgs[1], thisDirClus);
+		}*/
+	
+		if (!doCheck) {
+			makeFile(progArgs[1], thisDirClus);
+		} else {
+			error(19, progArgs[1]);
 		}
+	
+	
 	}
 	else {
 	     error(9, progArgs[0]);
@@ -601,7 +648,9 @@ union dirEntry file;
 	int doCheck;
 	char *nameFile;
 	struct node *ptrFile;
-	unsigned int fileClus, DirClus, offset;
+	unsigned int fileClus;
+	unsigned int DirClus;
+	unsigned int offset;
 	nameFile = progArgs[1];
 	if (nameFile != NULL) {
 	doCheck = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
@@ -646,8 +695,15 @@ int readCmd(char **progArgs) { //changed a little try more
 	int doCheck;
 	unsigned int myFile, myDir, loc, size, sizeFile, offset;
 	char *fNames;
-
+	/*
 	if (progArgs[1] == NULL || progArgs[2] == NULL || progArgs[3] == NULL) {
+		error(13, progArgs[0]);
+	} */
+	if (progArgs[1] == NULL) {
+		error(13, progArgs[0]);
+	} else if (progArgs[2] == NULL) {
+		error(13, progArgs[0]);
+	} else if (progArgs[3] == NULL) {
 		error(13, progArgs[0]);
 	} else {
 		fNames = progArgs[1];
@@ -668,7 +724,7 @@ int readCmd(char **progArgs) { //changed a little try more
 				printf("Error: %u + %u > %u: attempt to read beyond EOF\n", loc, size, sizeFile);
 			} else if (!readCheck(ptrFile)) {
 				error(15, fNames);
-			}else {
+			} else {
 				file.sf.last_acc_date = retTime();
 				setDirEntry(&file, myDir, offset);
 				fileR(&file, loc, size);
@@ -743,8 +799,8 @@ int exitCmd(void) {
 
 
 int retDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig) {
-	unsigned int firstDirClus, entryByteOff;
-	firstDirClus = retSecClus(dirClus);
+	unsigned int entryByteOff;
+	unsigned int firstDirClus = retSecClus(dirClus);
 	/*
 	if ((entryByteOff = 32*entryDig) >= imageData.bps*imageData.spc) {
 		// bad offset
@@ -767,8 +823,8 @@ int retDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig
 }
 
 int setDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig) {
-	unsigned int firstDirClus, entryByteOff;
-	firstDirClus = retSecClus(dirClus);
+	unsigned int entryByteOff;
+	unsigned int firstDirClus = retSecClus(dirClus);
 	/*
 	if ((entryByteOff = 32*entryDig) >= imageData.bps*imageData.spc) {
 		// bad offset
@@ -792,20 +848,21 @@ int setDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig
 }
 
 int retNextDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig) {
-	unsigned int firstDirClus, entryByteOff, nextDig;
-	nextDig = entryDig + 1;
-	
+	unsigned int firstDirClus, entryByteOff;
+	unsigned int nextDig = entryDig + 1;
+	/*
 	if ((entryByteOff = 32*nextDig) >= imageData.bps*imageData.spc) {
 		firstDirClus = retSecClus(retFatNextClus(dirClus));
 		entryByteOff -= imageData.bps*imageData.spc;
 	} else {
 		firstDirClus = retSecClus(dirClus);
-	}
+	}*/
 
 	//NEW
 	if (((entryByteOff = 32*nextDig) > imageData.bps*imageData.spc) || ((entryByteOff = 32*nextDig) == imageData.bps*imageData.spc)) {
 		firstDirClus = retSecClus(retFatNextClus(dirClus));
-		entryByteOff -= imageData.bps*imageData.spc;
+		entryByteOff = entryByteOff - imageData.bps*imageData.spc;
+		//entryByteOff -= imageData.bps*imageData.spc;
 	} else {
 		firstDirClus = retSecClus(dirClus);
 	}
@@ -818,7 +875,6 @@ int retNextDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entr
 }
 
 
-// implementation of list and open file table
 struct list *makeList(void) {
 	struct list *theList;
 	theList = calloc(1, sizeof(struct list));
@@ -833,13 +889,13 @@ struct list *makeList(void) {
 	return theList;
 }
 
-// function for free'ing all the memory
+
 void delList(struct list *pastList) {
 	pastList->clear(pastList);
 	free(pastList);
 }
 
-// frees each entry in the list
+
 void clearList(struct list *theList) {
 	struct node *ptr, *ptrNext;
 	ptr = theList->head;
@@ -851,12 +907,10 @@ void clearList(struct list *theList) {
 	theList->size = 0;
 }
 
-// adds the entry with the given file cluster and read/write mode
-// will only add with a valid file mode
+
 int addList(struct list *theList, unsigned int fileClus, char *mode) {
 	struct node *addNode;
-	unsigned char options;
-	options = toByte(mode);
+	unsigned char options = toByte(mode);
 	/*
 	if ((theList->find(theList, fileClus) == NULL) && (options != 0x0)) {
 		addNode = calloc(1, sizeof(struct node));
@@ -885,7 +939,7 @@ int addList(struct list *theList, unsigned int fileClus, char *mode) {
 	return 0;
 }
 
-// removes the given file cluster from the list
+
 int remList(struct list *theList, unsigned int fileClus) {
 	struct node *ptr, *previous;
 	ptr = theList->head;
@@ -897,11 +951,20 @@ int remList(struct list *theList, unsigned int fileClus) {
 		ptr = ptr->next;
 	}
 	if (ptr != NULL) {
+		/*
 		if (ptr == theList->head) {
 			theList->head = ptr->next;
 		} else {
 			previous->next = ptr->next;
+		}*/
+		
+		if (ptr != theList->head) {
+			previous->next = ptr->next;
+		} else {
+			theList->head = ptr->next;
 		}
+		
+		
 		--(theList->size);
 		free(ptr);
 		return 1;
@@ -909,7 +972,7 @@ int remList(struct list *theList, unsigned int fileClus) {
 	return 0;
 }
 
-// returns the node pointer to the given file cluster or NULL if it's not there
+
 struct node *lookList(struct list *theList, unsigned int fileClus) {
 	struct node *ptr;
 	ptr = theList->head;
@@ -922,7 +985,7 @@ struct node *lookList(struct list *theList, unsigned int fileClus) {
 	return ptr;
 }
 
-// returns the head of the list (for stack-like behavior)
+
 struct node *headList(struct list *theList) {
 	return theList->head;
 }
@@ -984,22 +1047,24 @@ unsigned int retSize(union dirEntry *file) {
 }
 
 int fileR(union dirEntry *file, unsigned int location, unsigned int size) {
-	unsigned int offset, remainBytes, thisClus, clusBytes, posByte, use;
+	//unsigned int offset, remainBytes, thisClus, clusBytes, posByte, use;
+	unsigned int use;
 	char *buff;
-	clusBytes = imageData.bps*imageData.spc;
+	unsigned int clusBytes = imageData.bps*imageData.spc;
 	buff = malloc(sizeof(char)*(clusBytes));
-	offset = location;
-	remainBytes = size;
-	thisClus = retFileClus(file);
+	unsigned int offset = location;
+	unsigned int remainBytes = size;
+	unsigned int thisClus = retFileClus(file);
 	while (offset > clusBytes) {
 		thisClus = retFatNextClus(thisClus);
 		if (chainEnd(thisClus)) {
 			free(buff);
 			return 0;
 		}
-		offset -= clusBytes;
+		//offset -= clusBytes;
+		offset = offset - clusBytes;
 	}
-	posByte = imageData.bps*retSecClus(thisClus) + offset;
+	unsigned int posByte = imageData.bps*retSecClus(thisClus) + offset;
 	/*
 	if (remainBytes > clusBytes - offset) {
 		use = clusBytes - offset;
@@ -1015,7 +1080,8 @@ int fileR(union dirEntry *file, unsigned int location, unsigned int size) {
 	
 	rChar(buff, posByte, use);
 	fwrite(buff, sizeof(char), use, stdout);
-	remainBytes -= use;
+	//remainBytes -= use;
+	remainBytes = remainBytes - use;
 	while (remainBytes > 0) {
 		thisClus = retFatNextClus(thisClus);
 		if (chainEnd(thisClus)) {
@@ -1038,26 +1104,29 @@ int fileR(union dirEntry *file, unsigned int location, unsigned int size) {
 		
 		rChar(buff, posByte, use);
 		fwrite(buff, sizeof(char), use, stdout);
-		remainBytes -= use;
+		//remainBytes -= use;
+		remainBytes = remainBytes - use;
 	}
 	return 1;
 }
 
 int fileW(union dirEntry *file, unsigned int location, unsigned int size, char *str) {
-	unsigned int offset, remainBytes, thisClus, clusBytes, posByte, use, begin;
-	clusBytes = imageData.bps*imageData.spc;
-	offset = location;
-	remainBytes = size;
-	begin = 0;
-	thisClus = retFileClus(file);
+	//unsigned int offset, remainBytes, thisClus, clusBytes, posByte, use, begin;
+	unsigned int use;
+	unsigned int clusBytes = imageData.bps*imageData.spc;
+	unsigned int offset = location;
+	unsigned int remainBytes = size;
+	unsigned int begin = 0;
+	unsigned int thisClus = retFileClus(file);
 	while (offset > clusBytes) {
 		thisClus = retFatNextClus(thisClus);
 		if (chainEnd(thisClus)) {
 			expClus(thisClus);
 		}
-		offset -= clusBytes;
+		//offset -= clusBytes;
+		offset = offset - clusBytes;
 	}
-	posByte = imageData.bps*retSecClus(thisClus) + offset;
+	unsigned int posByte = imageData.bps*retSecClus(thisClus) + offset;
 	/*
 	if (remainBytes > clusBytes - offset) {
 		use = clusBytes - offset;
@@ -1072,8 +1141,10 @@ int fileW(union dirEntry *file, unsigned int location, unsigned int size, char *
 	}
 	
 	wChar(&str[begin], posByte, use);
-	remainBytes -= use;
-	begin += use;
+	//remainBytes -= use;
+	remainBytes = remainBytes - use;
+	//begin += use;
+	begin = begin + use;
 	while (remainBytes > 0) {
 		thisClus = retFatNextClus(thisClus);
 		if (chainEnd(thisClus)) {
@@ -1094,8 +1165,10 @@ int fileW(union dirEntry *file, unsigned int location, unsigned int size, char *
 		}
 		
 		wChar(&str[begin], posByte, use);
-		remainBytes -= use;
-		begin += use;
+		//remainBytes -= use;
+		remainBytes = remainBytes - use;
+		//begin += use;
+		begin = begin + use;
 	}
 	if (location + size > file->sf.sizeFile) {
 		file->sf.sizeFile = location + size;
@@ -1217,27 +1290,27 @@ int makeDir(char *dir_name, unsigned int dirClus) {
 
 // PARSE
 
-/* readIn
- *
- * Dynamically allocates memory for a c-string, reads stdin and places the input
- * into the c-string. Returns the c-string.
- */
+
 char *readIn() {
 	char *progLine = calloc(INPUT_BUFFER_SIZE, sizeof(char));
-	
+	/*
 	if (fgets(progLine, INPUT_BUFFER_SIZE, stdin)) {
 		return progLine;
 	} else {
 		//Do something about this error, NULL on return
 		return NULL;
+	}*/
+	
+	if (!fgets(progLine, INPUT_BUFFER_SIZE, stdin)) {
+		//Do something about this error, NULL on return
+		return NULL;
+	} else {
+		return progLine;
 	}
+	
 }
 
-/* parse
- * 
- * The grand parsing function which wraps around many other smaller functions
- * necessary for parsing the commands given in the terminal.
- */
+
 char **parse(char *line) {
 	char **args;
 	line = parseWhite(line);
@@ -1245,15 +1318,7 @@ char **parse(char *line) {
 	return args;
 }
 
-/* parseWhite
- *
- * Takes a c-string, progLine, and removes unnecessary whitespace and adds
- * whitespace where needed.
- *
- * special characters: |, <, >, &, $, ~
- * don't do this for: ., /
- * whitespace: <space>, \t, \v, \f, \r (\n is used to debound commands)
- */
+
 char *parseWhite(char *progLine) {
 	remLeadWhite(progLine);
 	remMidWhite(progLine);
@@ -1262,14 +1327,7 @@ char *parseWhite(char *progLine) {
 	return progLine;
 }
 
-/* parseArgs
- *
- * Takes a c-string, progLine, and splits it into tokens debounded by space. An
- * array of strings is returned. The size of the array of strings is governed by
- * the constant PARAM_LIMIT. The array and it's elements use allocated memory
- * and should be freed later. The last element is followed by a NULL pointer to
- * mark the end of the array.
- */
+
 char **parseArgs(char *progLine) {
 	size_t argQuantity;
 	char *lineTemp;
@@ -1291,14 +1349,16 @@ char **parseArgs(char *progLine) {
 			break;
 		}
 		if (lineTemp[location + offset + 1] == '\"') {
-			location += offset + 2;
+			//location += offset + 2;
+			location = location + offset + 2;
 			offset = strcspn(&lineTemp[location], "\"");
 			progArgs[i] = (char *)malloc(offset + 1);
 			strncpy(progArgs[i], &lineTemp[location], offset);
 			progArgs[i++][offset] = '\0';
 			++offset;
 		}
-		location += offset + 1;
+		//location += offset + 1;
+		location = location + offset + 1;
 		if (lineTemp[location - 1] == '\0') {
 			break;
 		}
@@ -1315,11 +1375,7 @@ char **parseArgs(char *progLine) {
 	return progArgs;
 }
 
-/* trackArgs
- *
- * This take a c-string and counters the number of arguments which corresponds to
- * the number of spaces plus one.
- */
+
 size_t trackArgs(char *progLine) {
 	int i, checkQuotes;
 	size_t counter;
@@ -1367,11 +1423,7 @@ size_t trackArgs(char *progLine) {
 	return counter + 1;
 }
 
-/* remLeadWhite
- *
- * Takes the input c-string and loops through string. The leading whitespace is
- * ignored while the rest of the string is shifted to the front.
- */
+
 char *remLeadWhite(char *progLine){
 	char *tmp = progLine, *ptr = progLine;
 	short notWhite = 0;
@@ -1389,16 +1441,7 @@ char *remLeadWhite(char *progLine){
 	return progLine;
 }
 
-/* remMidWhite
- *
- * Takes c-string and shifts the characters so that there is at most one space
- * character between each token separated by whitespace. E.g.
- * 
- * "file1   \t \v    file2" ==> "file1 file2"
- * 
- * A null byte is added to the end of the string -- doesn't worry about the 
- * whitespace at the end.
- */
+
 char *remMidWhite(char *progLine){
 	// tmp holds place where char is modified, ptr holds place where checking
 	char *tmp = progLine, *ptr = progLine;
@@ -1499,12 +1542,7 @@ int checkLastQuote(char* ptr){
 	return 1;
 }
 
-/* addMidWhite
- *
- * Takes c-string and adds space character between tokens which may not have any
- * whitespace initially. Special characters include <, >, |, &. Also in
- * consideration is >>.
- */
+
 char *addMidWhite(char *progLine){
 	char tmp[INPUT_BUFFER_SIZE];
 	char *ptr = progLine;
@@ -1562,10 +1600,7 @@ char *addMidWhite(char *progLine){
 	return progLine;
 }
 
-/* remTrailWhite
- *
- * Takes c-string and adds the a null byte after the last non-whitespace char.
- */
+
 char *remTrailWhite(char *progLine){
 	char *last = progLine, *ptr = progLine;
 	while (*ptr != 0) {
@@ -1578,11 +1613,7 @@ char *remTrailWhite(char *progLine){
 	return progLine;
 }
 
-/* trackCmdSize
- *
- * Makes sure the given string is shorter than the maximum allowed size of the
- * command string. Returns 1 if the string is good and 0 if the string is bad
- */
+
 int trackCmdSize(char *progLine) {
 	int i;
 	/*
@@ -1603,26 +1634,15 @@ int trackCmdSize(char *progLine) {
 	return 0;
 }
 
-/* ridCmdLine
- * 
- * Takes a c-string and frees the memory allocated for that
- */
+/* DON'T NEED THESE
 void ridCmdLine(char *progLine) {
 	free(progLine);
 }
 
-/* ridCmdArgs
- *
- * Takes array of c-strings and frees each element and then frees the memory of
- * the array
- */
+
 void ridCmdArgs(char **progArgs) {
 	int i;
-	/*
-	for (i = 0; progArgs[i] != NULL; ++i) {
-		free(progArgs[i]);
-		progArgs[i] = NULL;
-	}*/
+	
 	
 	i = 0;
 	while (progArgs[i] != NULL) {
@@ -1634,37 +1654,33 @@ void ridCmdArgs(char **progArgs) {
 	
 	free(progArgs);
 }
-
+*/
 
 
 // END PARSE
 
 // SETUP
 
-// global variables
 
 
 
-/* setup function which initializes all the global variables and opens the image
- * in read and write mode.
- */
+
+
 int setup(char *fNamesImage, char *nameRun) {
 	if ((fatImage = fopen(fNamesImage, "r+")) == NULL) {
 		perror(NULL);
 		return 0;
 	}
-	endianVar = check_endian();
+	endianVar = endianSee();
 	getFatInfo();
 	setRootDir();
 	setOpened();
-	displayIntro(fNamesImage, nameRun);
+	//displayIntro(fNamesImage, nameRun);
 
 	return 1;
 }
 
-/* extracts the vital information for traversing the fat32 image from the boot
- * sector
- */
+
 int getFatInfo(void) {
 	readUnSh(&imageData.bps, 11);
 	readUnCh(&imageData.spc, 13);
@@ -1678,12 +1694,10 @@ int getFatInfo(void) {
 	return 0;
 }
 
-/* sets the first root directory sector, current directory sector and names, and
- * the first data sector
- */
+
 int setRootDir(void) {
-	unsigned int funcDataSec;
-	funcDataSec = imageData.tsec32 - (imageData.rsvd_s_c + (imageData.n_fat*imageData.fsz32));
+	//unsigned int funcDataSec;
+	unsigned int funcDataSec = imageData.tsec32 - (imageData.rsvd_s_c + (imageData.n_fat*imageData.fsz32));
 	numClus = funcDataSec/imageData.spc;
 	dataSec = imageData.rsvd_s_c + (imageData.n_fat*imageData.fsz32);
 	rootSec = retSecClus(imageData.rclustr);
@@ -1700,24 +1714,19 @@ int setOpened(void) {
 	return 1;
 }
 
-/* prints the prompt */
+
 void displayPrompt(void) {
 	printf("%s] ", thisDir);
 }
 
-/* prints the intro message */
-void displayIntro(char *fNamesImage, char *nameRun) {
-	printf("Welcome to the %s shell utility\n", nameRun);
-	printf("Image, %s, is ready to view\n", fNamesImage);
-	printf("For a list of commands, type \"help\" or \"h\"\n");
-}
+
 
 
 // END SETUP
 
 // ERROR
 
-// ONE ARG
+
 
 void error(int type, char* print){
 	switch(type){
@@ -1791,15 +1800,16 @@ void error(int type, char* print){
 
 // TOOLS
 
-// global variables used in this file
 
 
 
+// ABBY'S SECTION ***********************************
 
 
-// reads use amount of characters from fatImage file at pos
+
 int rChar(void *ptr, long pos, size_t use) {
-	long offset = pos - ftell(fatImage);
+	long offset;
+	offset = pos - ftell(fatImage);
 	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return 0;
@@ -1811,9 +1821,10 @@ int rChar(void *ptr, long pos, size_t use) {
 	return 1;
 }
 
-// writes use amount of characters from fatImage file at pos
+
 int wChar(void *ptr, long pos, size_t use) {
-	long offset = pos - ftell(fatImage);
+	long offset;
+	offset = pos - ftell(fatImage);
 	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return 0;
@@ -1825,9 +1836,10 @@ int wChar(void *ptr, long pos, size_t use) {
 	return 1;
 }
 
-// reads an unsigned int from fatImage at pos
+
 unsigned int *readUnInt(unsigned int *ptr, long pos) {
-	long offset = pos - ftell(fatImage);
+	long offset;
+	offset = pos - ftell(fatImage);
 	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
@@ -1842,7 +1854,7 @@ unsigned int *readUnInt(unsigned int *ptr, long pos) {
 	return ptr;
 }
 
-// writes an unsigned int to fatImage at pos
+
 unsigned int *writeUnInt(unsigned int *ptr, long pos) {
 	long offset;
 	unsigned int tmp;
@@ -1863,9 +1875,10 @@ unsigned int *writeUnInt(unsigned int *ptr, long pos) {
 	return ptr;
 }
 
-// reads an unsigned short from fatImage at pos
+
 unsigned short *readUnSh(unsigned short *ptr, long pos) {
-	long offset = pos - ftell(fatImage);
+	long offset;
+	offset = pos - ftell(fatImage);
 	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
@@ -1881,21 +1894,19 @@ unsigned short *readUnSh(unsigned short *ptr, long pos) {
 }
 
 
-
-// writes an unsigned short to fatImage at pos
 unsigned short *writeUnSh(unsigned short *ptr, long pos) {
 	long offset;
 	unsigned short tmp;
 	offset = pos - ftell(fatImage);
-	if (fseek(fatImage, offset, SEEK_CUR) == -1) {   //swapped with if(endianVar)
+	if (endianVar) {
+		tmp = switch16(*ptr);
+	} else {
+		tmp = *ptr;
+	}
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
 	}
-	if(endianVar)              ///removed the { and } from if and else
-		tmp = switch16(*ptr);
-	else 
-		tmp = *ptr;
-	
 	if (fwrite(&tmp, sizeof(unsigned short), 1, fatImage) != 1) {
 		perror(NULL);
 		return NULL;
@@ -1903,92 +1914,117 @@ unsigned short *writeUnSh(unsigned short *ptr, long pos) {
 	return ptr;
 }
 
-// reads an unsigned char from fatImage at pos
+
 unsigned char *readUnCh(unsigned char *ptr, long pos) {
-	long offset = pos - ftell(fatImage);
-	if (fread(ptr, sizeof(char), 1, fatImage) != 1) {        //swapped fread and fseek
-		perror(NULL);
-		return NULL;
-	}
+	long offset;
+	offset = pos - ftell(fatImage);
 	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
 	}
-	
+	if (fread(ptr, sizeof(char), 1, fatImage) != 1) {
+		perror(NULL);
+		return NULL;
+	}
 	return ptr;
 }
 
-// writes an unsigned char to fatImage at pos
+
 unsigned int switch32(unsigned int val) {
-	return ((val >> 24) & 0xff) | ((val << 8) & 0xff0000) | ((val >> 8) & 0xff00) | ((val << 24) & 0xff000000);  //cant really change this
+	unsigned int switchVal = ((val>>24)&0xff) | ((val<<8)&0xff0000) | ((val>>8)&0xff00) | ((val<<24)&0xff000000);
+	return switchVal;
+	//return ((val>>24)&0xff) | ((val<<8)&0xff0000) | ((val>>8)&0xff00) | ((val<<24)&0xff000000);
 }
 
 unsigned short switch16(unsigned short val) {
-	return (val << 8) | (val >> 8);   //cant really change this
+	unsigned int switchVal = (val<<8) | (val>>8);
+	return switchVal;
+	//return (val<<8) | (val>>8);
 }
 
-int check_endian(void) {
-	int num;    //int num = 1;
-	num = 1;
-	if (*(char *)&num == 1)                 //got rid of if and elses {  }
+int endianSee(void) {
+	int num = 1;
+	/*
+	if(*(char *)&num == 1) {
 		return 0; // little endian
-	else 
+	} else {
 		return 1; // big endian
+	}*/
+	
+	if (*(char *)&num != 1) {
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
-// follows the formula from the FAT32 specifications
+
 unsigned int retSecClus(unsigned int clus) {
-	return (clus - 2)*imageData.spc + dataSec;    //cant really change this
+	unsigned int val = (clus - 2)*imageData.spc + dataSec;
+	return val;
+	//return (clus - 2)*imageData.spc + dataSec;
 }
 
-/* returns the absolute location of the given cluster in the given FAT in terms
-* of bytes
-*/
-unsigned long retFatClusPos(unsigned int clus, unsigned int fat) {    //cant really change this
+
+unsigned long retFatClusPos(unsigned int clus, unsigned int fat) {
 	unsigned int i, beginSecFAT;
-	i = fat < imageData.n_fat ? fat : 0;
+	//i = fat < imageData.n_fat ? fat : 0; 
+	
+	if (fat < imageData.n_fat) {
+		i = fat;
+	} else {
+		i = 0;
+	}
 	beginSecFAT = imageData.rsvd_s_c + i*imageData.fsz32;
-	return beginSecFAT*imageData.bps + 4 * clus;
+	return beginSecFAT*imageData.bps + 4*clus;
 }
+// START OF HUNTER'S SECTION ************************************
 
-/* returns the next cluster in the chain
-*/
+
 unsigned int retFatNextClus(unsigned int clus) {
 	unsigned int nextClus;
-	unsigned long location = retFatClusPos(clus, 0);   
-	//location = retFatClusPos(clus, 0);
+	unsigned long location = retFatClusPos(clus, 0);
 	readUnInt(&nextClus, location);
 	return nextClus & NEXT_CLUS_MASK;
 }
 
-// same as above but doesn't apply the NEXT_CLUS_MASK to result
+
 unsigned int retFatNextClus_true(unsigned int clus) {
+	
 	unsigned int nextClus;
 	unsigned long location = retFatClusPos(clus, 0);
-	//location = retFatClusPos(clus, 0);
 	readUnInt(&nextClus, location);
 	return nextClus;
 }
 
-// checks if the value is one of the end of chain values
+
 int chainEnd(unsigned int clus) {
-	if ((clus & END_OF_CHAIN) == END_OF_CHAIN)              //got rid of the { and }
+	/*
+	if ((clus & END_OF_CHAIN) == END_OF_CHAIN) {
 		return 1;
-	else
+	} else {
 		return 0;
+	}*/
+	
+	if ((clus & END_OF_CHAIN) != END_OF_CHAIN) {
+		return 0;
+	} else {
+		return 1;
+	}
 }
 
-// changes the values in all file allocation tables at fileClus to "value"
+
 int changeFats(unsigned int fileClus, unsigned int value) {
 	unsigned long location;
-	//int i;
-	/*for (i = 0; i < imageData.n_fat; ++i) {
+	int i;
+	/*
+	for (i = 0; i < imageData.n_fat; ++i) {
 		location = retFatClusPos(fileClus, i);
 		writeUnInt(&value, location);
 	}*/
-	int i = 0;
-	while(i < imageData.n_fat)
-	{
+	
+	i = 0;
+	while (i < imageData.n_fat) {
 		location = retFatClusPos(fileClus, i);
 		writeUnInt(&value, location);
 		++i;
@@ -1996,9 +2032,11 @@ int changeFats(unsigned int fileClus, unsigned int value) {
 	return 1;
 }
 
-// takes a short name and stores transformed name to fNames
+
 int shortLow(char fNames[12], char shNames[11]) {
-	/*int i, j;
+	int i;
+	int j;
+	/*
 	for (i = 0, j = 0; i < 11; ++i) {
 		if (shNames[i] != ' ') {
 			if (i == 8) {
@@ -2006,83 +2044,101 @@ int shortLow(char fNames[12], char shNames[11]) {
 			}
 			fNames[j++] = tolower(shNames[i]);
 		}
-	}
-	for (j = j; j < 12; ++j) {
-		fNames[j] = '\0';
 	}*/
-	int i = 0, j = 0;
-	while(i < 11)
-	{
-		if (shNames[i] != ' ') 
-		{
-			if (i == 8)
+	
+	//new
+	i = 0;
+	j = 0;
+	while (i < 11) {
+		if (shNames[i] != ' ') {
+			if (i == 8) {
 				fNames[j++] = '.';
+			}
 			fNames[j++] = tolower(shNames[i]);
 		}
 		++i;
 	}
+	
+	/*
+	for (j = j; j < 12; ++j) {
+		fNames[j] = '\0';
+	}*/
+	
+	
+	//new
 	j = j;
-	while(j < 12)
-	{
+	while (j < 12) {
 		fNames[j] = '\0';
 		++j;
 	}
+	
+	
 	return 1;
 }
 
-// takes fNames and stores "short name transformed" string in shNames
+
 int fileShort(char fNames[12], char shNames[11]) {
-	//int i, j;
-	if (strcmp(fNames, ".") == 0) 
-	{
+	int i;
+	int j;
+	/*
+	if (strcmp(fNames, ".") == 0) {
+		strcpy(shNames, ".          ");
+		return 1;
+	} else if (strcmp(fNames, "..") == 0) {
+		strcpy(shNames, "..         ");
+		return 1;
+	}*/
+	if (strcmp(fNames, "..") == 0) {
+		strcpy(shNames, "..         ");
+		return 1;
+	} else if (strcmp(fNames, ".") == 0) {
 		strcpy(shNames, ".          ");
 		return 1;
 	}
-	else if (strcmp(fNames, "..") == 0) 
-	{
-		strcpy(shNames, "..         ");
-		return 1;
+	
+	
+	
+	i = 0, j = 0;
+	while (i < 8 && fNames[j] != '.' && fNames[j] !='\0') {
+		shNames[i++] = toupper(fNames[j++]);
 	}
-	/*i = 0, j = 0;
-	while (i < 8 && fNames[j] != '.' && fNames[j] != '\0') 
-	{
-		shNames[i++] = toupper(fNames[j++]);
-	}*/
-	do
-	{
-		shNames[i++] = toupper(fNames[j++]);
-	}while(i < 8 && fNames[j] != '.' && fNames[j] != '\0');
-	/*for (i = i; i < 8; i++) {
+	/*
+	for (i = i; i < 8; i++) {
 		shNames[i] = ' ';
 	}*/
+	
 	i = i;
-	while(i < 8)
-	{
+	while (i < 8) {
 		shNames[i] = ' ';
 		i++;
 	}
-	if (fNames[j++] == '.') 
-	{
-		while (i < 11 && fNames != '\0') 
-		{
+	
+	
+	
+	if (fNames[j++] == '.') {
+		while (i < 11 && fNames != '\0') {
 			shNames[i++] = toupper(fNames[j++]);
 		}
 	}
-	/*for (i = i; i < 11; ++i) {
+
+	
+	/*
+	for (i = i; i < 11; ++i) {
 		shNames[i] = ' ';
 	}*/
+	
+	
 	i = i;
-	while(i < 11)
-	{
+	while (i < 11) {
 		shNames[i] = ' ';
 		++i;
 	}
+	
+	
 	return 1;
 }
 
 
-// finds the file in the given directory entry with name "fNames". returns 1
-// if a file is searched and 0 if no file is searched
 int lookupFile(char *fNames, unsigned int dirClus, union dirEntry *ptr, unsigned int *ptrClus, unsigned int *ptrOff) {
 	unsigned int thisClus, i, bound, finish;
 	union dirEntry file;
@@ -2119,7 +2175,7 @@ int lookupFile(char *fNames, unsigned int dirClus, union dirEntry *ptr, unsigned
 	return 0;
 }
 
-// gets the first file cluster in the given directory entry
+
 unsigned int retFileClus(union dirEntry *ptr) {
 	unsigned int fileClus;
 	unsigned short hi, lo;
@@ -2133,7 +2189,7 @@ unsigned int retFileClus(union dirEntry *ptr) {
 	return fileClus;
 }
 
-// checks if the directory is empty
+
 int emptyDir(union dirEntry *dir) {
 	unsigned int thisClus, i, j, bound, finish;
 	union dirEntry file;
@@ -2144,6 +2200,7 @@ int emptyDir(union dirEntry *dir) {
 	do {
 		for (i = 0; i < bound; ++i, ++j) {
 			retDirEntry(&file, thisClus, i);
+			/*
 			if (j == 0 || j == 1) {
 				continue;
 			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
@@ -2154,75 +2211,122 @@ int emptyDir(union dirEntry *dir) {
 				return 1;
 			} else {
 				return 0;
+			}*/
+			
+			if ( j == 0 ) {
+				continue;
+			} else if (j == 1) {
+				continue;
+			} else if (file.raw_bytes[0] == 0x00) {
+				return 1;
+			} else if (file.raw_bytes[0] == 0xE5) {
+				continue;
+			} else {
+				return 0;
 			}
+			
+			
+			
 		}
 		thisClus = retFatNextClus(thisClus);
 	} while (!chainEnd(thisClus) && !finish);
 	return 1;
 }
 
-// returns the hi value of the given cluster
+// HOLLY'S SECTION **********************************
+
+
 unsigned short retHiVal(unsigned int clus) {
+	/*
 	unsigned short hi;
 	hi = (unsigned short)clus >> 16;
 	if (endianVar) {
 		hi = switch16(hi);
 	}
-	return hi;
+	return hi;*/
+	
+	unsigned short val;
+	val = (unsigned short)clus >> 16;
+	if (endianVar) {
+		val = switch16(val);
+	}
+	return val;
+	
 }
 
-// returns the lo value of the given cluster
+
 unsigned short retLoVal(unsigned int clus) {
+	/*
 	unsigned short lo;
 	lo = (unsigned short)clus & 0xFFFF;
 	if (endianVar) {
 		lo = switch16(lo);
 	}
-	return lo;
+	return lo;*/
+	
+	unsigned short val;
+	val = (unsigned short)clus & 0xFFFF;
+	if (endianVar) {
+		val = switch16(val);
+	}
+	return val;
+	
 }
 
-// returns the time in the FAT32 format
+
 unsigned short retTime(void){
 	time_t timeFatForm;
 	struct tm * timeNow;
-	unsigned short t;
+	unsigned short timeVal;
 
 	time(&timeFatForm);
 	timeNow = localtime(&timeFatForm);
-	t = ((timeNow->tm_hour*0x0800)+(timeNow->tm_min*0x0020)+(timeNow->tm_sec/2));
+	timeVal = ((timeNow->tm_hour*0x0800)+(timeNow->tm_min*0x0020)+(timeNow->tm_sec/2));
 	if (endianVar) {
-		t = switch16(t);
+		timeVal = switch16(timeVal);
 	}
-	return t;
+	return timeVal;
 }
 
-// returns the date in the FAT32 format
+
 unsigned short retDate(void){
 	time_t timeFatForm;
 	struct tm * timeNow;
-	unsigned short d;
+	unsigned short dateVal;
 
 	time(&timeFatForm);
 	timeNow = localtime(&timeFatForm);
-	d = (((timeNow->tm_year-80)*0x0200)+((timeNow->tm_mon+1)*0x0020)+(timeNow->tm_mday));
+	dateVal = (((timeNow->tm_year-80)*0x0200)+((timeNow->tm_mon+1)*0x0020)+(timeNow->tm_mday));
 	if (endianVar) {
-		d = switch16(d);
+		dateVal = switch16(dateVal);
 	}
-	return d;
+	return dateVal;
 }
 
-// searches for the next open cluster in the FAT
+
 unsigned int lookupOpenClus() {
-	unsigned int value;	//cluster data
+	unsigned int val;	//cluster data
 	unsigned int searched = 1;	//free space searched
 	unsigned int i;			//counterer
+	/*
 	for (i = 2; i < numClus; ++i) {
 		value = retFatNextClus(i);
 		if (value == 0){
 			searched = 0;
 			break;
 		}
+	}*/
+	i = 2;
+	while (i < numClus) {
+		val = retFatNextClus(i);
+		if (val == 0){
+			searched = 0;
+			break;
+		}
+		++i;
 	}
+	
+	
 	if (searched == 1){
 		printf("Error: No more space available on the image!\n");
 		return 0;
@@ -2230,16 +2334,19 @@ unsigned int lookupOpenClus() {
 	return i;
 }
 
-// finds the next available directory entry
+
 unsigned int lookupOpenDirEntry(unsigned int dirClus, union dirEntry *ptr, unsigned int *ptrClus, unsigned int *ptrOff) {
-	unsigned int thisClus, i, bound, searched;
+	//unsigned int thisClus, i, bound, searched;
+	unsigned int i;
 	union dirEntry file;
-	thisClus = dirClus;
-	bound = imageData.bps*imageData.spc/32;
-	searched = 0;
+	unsigned int thisClus = dirClus;
+	unsigned int bound = imageData.bps*imageData.spc/32;
+	unsigned int searched = 0;
 	do {
+		
 		for (i = 0; i < bound; ++i) {
 			retDirEntry(&file, thisClus, i);
+			/*
 			if (file.raw_bytes[0] == 0x00) {
 				setEntryNull(thisClus, i);
 				*ptr = file;
@@ -2253,8 +2360,28 @@ unsigned int lookupOpenDirEntry(unsigned int dirClus, union dirEntry *ptr, unsig
 				continue;
 			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
 				continue;
+			}*/
+			
+			if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
+				continue;
+			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
+				continue;
+			} else if (file.raw_bytes[0] == 0x00) {
+				setEntryNull(thisClus, i);
+				*ptr = file;
+				searched = 1;
+				break;
+			} else if (file.raw_bytes[0] == 0xE5) {
+				*ptr = file;
+				searched = 1;
+				break;
 			}
+			
+			
+			
 		}
+		
+		
 		if (searched) {
 			if (ptrClus != NULL) {
 				*ptrClus = thisClus;
@@ -2269,11 +2396,12 @@ unsigned int lookupOpenDirEntry(unsigned int dirClus, union dirEntry *ptr, unsig
 	return 0;
 }
 
-// sets the next directory entry to 0x00. Expands the directory if necessary
+
 int setEntryNull(unsigned int dirClus, unsigned int entryDig) {
 	union dirEntry file;
-	unsigned int firstDirClus, entryByteOff, nextDig;
-	nextDig = entryDig + 1;
+	unsigned int firstDirClus, entryByteOff;
+	unsigned int nextDig = entryDig + 1;
+	/*
 	if ((entryByteOff = 32*nextDig) >= imageData.bps*imageData.spc) {
 		if (chainEnd(retFatNextClus(dirClus))) {
 			expClus(dirClus);
@@ -2282,14 +2410,26 @@ int setEntryNull(unsigned int dirClus, unsigned int entryDig) {
 		entryByteOff -= imageData.bps*imageData.spc;
 	} else {
 		firstDirClus = retSecClus(dirClus);
+	}*/
+	if (((entryByteOff = 32*nextDig) > imageData.bps*imageData.spc) || ((entryByteOff = 32*nextDig) == imageData.bps*imageData.spc)) {
+		if (chainEnd(retFatNextClus(dirClus))) {
+			expClus(dirClus);
+		}
+		firstDirClus = retSecClus(retFatNextClus(dirClus));
+		entryByteOff = entryByteOff - imageData.bps*imageData.spc;
+	} else {
+		firstDirClus = retSecClus(dirClus);
 	}
+	
+	
+	
 	rChar(&file, entryByteOff + firstDirClus*imageData.bps, sizeof(union dirEntry));
 	file.raw_bytes[0] = 0x00;
 	wChar(&file, entryByteOff + firstDirClus*imageData.bps, sizeof(union dirEntry));
 	return 1;
 }
 
-// function for making room in the file
+
 int expClus(unsigned int oldClus1) {
 	unsigned int new_clus;
 	new_clus = lookupOpenClus();
