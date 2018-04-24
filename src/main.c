@@ -1,14 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
+/*
 #include "setup.h"
 #include "parse.h"
 #include "execute.h"
 #include "clean.h"
 #include "tools.h"
 #include "file_types.h"
+*/
 
+#include "utility.h"
+#include "tools.h"
+#include "parse.h"
+#include "setup.h"
+#include "file_types.h"
 
 int endianVar;
 FILE *fatImage;
