@@ -69,7 +69,7 @@ struct list {
 };
 
 struct list *makeList(void);
-void delList(struct list *pastList);
+//void delList(struct list *pastList);
 
 void clearList(struct list *theList);
 int addList(struct list *theList, unsigned int fileClus, char *mode);
