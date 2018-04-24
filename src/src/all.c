@@ -91,7 +91,7 @@ int cdCmd(char **progArgs) {
 		/*
 		if (!check) {
 			error(12, progArgs[1]);
-		} else if((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
+		} else if((file.shFi.trait & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
 			error(11, progArgs[1]);
 		} else { // it's a directory
 			changeDirClus(&file);
@@ -99,7 +99,7 @@ int cdCmd(char **progArgs) {
 		}*/
 		
 		// NEW
-		if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
+		if ((file.shFi.trait & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
 			error(11, progArgs[1]);
 		}
 		else if (!check) {
@@ -131,7 +131,7 @@ int lsCmd(char **progArgs) {
 		if (!check) {
 			error(12, progArgs[1]);
 			return 0;
-		} else if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
+		} else if ((file.shFi.trait & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
 			error(11, progArgs[1]);
 			return 0;
 		} else {
@@ -145,14 +145,14 @@ int lsCmd(char **progArgs) {
 		if (!check) {
 			error(12, progArgs[1]);
 			return 0;
-		} else if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
+		} else if ((file.shFi.trait & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
 			error(11, progArgs[1]);
 			return 0;
 		} else {
 			DirClus = retFileClus(&file);
 		}*/
 		
-		if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
+		if ((file.shFi.trait & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
 			error(11, progArgs[1]);
 			return 0;
 		}
@@ -227,7 +227,7 @@ int rmdirCmd(char **progArgs) {
 		check = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (!check) {
 			error(2, progArgs[1]);
-		} else if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
+		} else if ((file.shFi.trait & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
 			error(11, progArgs[1]);
 		} else if (!emptyDir(&file)) {
 			error(18, progArgs[1]);
@@ -241,7 +241,7 @@ int rmdirCmd(char **progArgs) {
 		/*
 		if (!check) {
 			error(2, progArgs[1]);
-		} else if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
+		} else if ((file.shFi.trait & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
 			error(11, progArgs[1]);
 		} else if (!emptyDir(&file)) {
 			error(18, progArgs[1]);
@@ -253,7 +253,7 @@ int rmdirCmd(char **progArgs) {
 			error(18, progArgs[1]);
 		} else if (!check) {
 			error(2, progArgs[1]);
-		} else if ((file.sf.attr & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
+		} else if ((file.shFi.trait & ATTR_DIRECTORY) != ATTR_DIRECTORY) {
 			error(11, progArgs[1]);
 		} else {
 			fileDel(&file, DirClus, offset);
@@ -279,23 +279,23 @@ int displayDir(unsigned int dirClus) {
 		for (i = 0; i < bound; ++i) {
 			retDirEntry(&file, thisClus, i);
 			
-			if (file.raw_bytes[0] == 0x00) {
+			if (file.natBytes[0] == 0x00) {
 				finish = 1;
 				break;
-			} else if (file.raw_bytes[0] == 0xE5) {
+			} else if (file.natBytes[0] == 0xE5) {
 				continue;
-			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
+			} else if ((file.lonFi.trait & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
 				continue;
-			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == 0x00) {
-				shortLow(fNames, file.sf.name);
+			} else if ((file.shFi.trait & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == 0x00) {
+				shortLow(fNames, file.shFi.name);
 				printf("%s\t", fNames);
-			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_DIRECTORY) {
-				shortLow(fNames, file.sf.name);
+			} else if ((file.shFi.trait & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_DIRECTORY) {
+				shortLow(fNames, file.shFi.name);
 				printf("%s/\t", fNames);
-			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
+			} else if ((file.shFi.trait & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
 				continue;
 			} else {
-				// bad file
+				
 			}
 			
 			
@@ -309,7 +309,7 @@ int displayDir(unsigned int dirClus) {
 
 int changeDirClus(union dirEntry *ptr) {
 	unsigned int fileClus;
-	if ((ptr->sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+	if ((ptr->shFi.trait & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
 		fileClus = retFileClus(ptr);
 		/*
 		if (fileClus == 0) {
@@ -331,8 +331,8 @@ int changeDirClus(union dirEntry *ptr) {
 int changeCurDir(union dirEntry *ptr) {
 	char fNames[12];
 	unsigned int slashNTL;
-	if ((ptr->sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
-		shortLow(fNames, ptr->sf.name);
+	if ((ptr->shFi.trait & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+		shortLow(fNames, ptr->shFi.name);
 		/*
 		if (retFileClus(ptr) == 0) {
 			strcpy(thisDir, "/");
@@ -517,7 +517,7 @@ int openCmd(char **progArgs) { //changed
 		if (!doCheck) {
 			error(2,progArgs[1]);
 		}
-		else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+		else if ((file.shFi.trait & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
 			error(3,progArgs[1]);
 		}
 		else if (toByte(progArgs[2]) == 0x0) {
@@ -529,13 +529,13 @@ int openCmd(char **progArgs) { //changed
 		/*	if (ptrFile != NULL) {
 				error(1,progArgs[1]);
 			} else {
-				file.sf.last_acc_date = retDate();
+				file.shFi.dateLast = retDate();
 				setDirEntry(&file, doDir, offset);
 				theOpen->add(theOpen, retFileClus(&file), progArgs[2]);
 			}
 		*/
 			if (ptrFile == NULL) {
-				file.sf.last_acc_date = retDate();
+				file.shFi.dateLast = retDate();
 				setDirEntry(&file, doDir, offset);
 				theOpen->add(theOpen, retFileClus(&file), progArgs[2]);
 			}
@@ -550,7 +550,7 @@ int openCmd(char **progArgs) { //changed
                 doCheck = lookupFile(progArgs[1], thisDirClus, &file, &doDir, &offset);
                 if (!doCheck) {
                         error(2,progArgs[1]);
-                } else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+                } else if ((file.shFi.trait & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
                         error(3,progArgs[1]);
                 } else if (toByte(progArgs[2]) == 0x0) {
                         error(4,progArgs[2]);
@@ -560,7 +560,7 @@ int openCmd(char **progArgs) { //changed
                         if (ptrFile != NULL) {
                                 error(1,progArgs[1]);
                         } else {
-                                file.sf.last_acc_date = retDate();
+                                file.shFi.dateLast = retDate();
                                 setDirEntry(&file, doDir, offset);
                                 theOpen->add(theOpen, retFileClus(&file), progArgs[2]);
                         }
@@ -581,7 +581,7 @@ int closeCmd(char **progArgs) { //changed
 	doCheck = lookupFile(progArgs[1], thisDirClus, &file, NULL, NULL);
 		if (!doCheck) {
 			error(2,progArgs[1]);
-		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+		} else if ((file.shFi.trait & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
 			error(5, progArgs[1]);
 		} else {
 			fileClus = retFileClus(&file);
@@ -656,7 +656,7 @@ union dirEntry file;
 	doCheck = lookupFile(progArgs[1], thisDirClus, &file, &DirClus, &offset);
 		if (!doCheck) {
 			error(2,progArgs[1]);
-		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+		} else if ((file.shFi.trait & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
 			error(20,progArgs[1]);
 		} else {
 			fileClus = retFileClus(&file);
@@ -712,7 +712,7 @@ int readCmd(char **progArgs) { //changed a little try more
 		doCheck = lookupFile(fNames, thisDirClus, &file, &myDir, &offset);
 		if (!doCheck) {
 			error(2,fNames);
-		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+		} else if ((file.shFi.trait & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
 			error(5, fNames);
 		} else {
 			myFile = retFileClus(&file);
@@ -725,7 +725,7 @@ int readCmd(char **progArgs) { //changed a little try more
 			} else if (!readCheck(ptrFile)) {
 				error(15, fNames);
 			} else {
-				file.sf.last_acc_date = retTime();
+				file.shFi.dateLast = retTime();
 				setDirEntry(&file, myDir, offset);
 				fileR(&file, loc, size);
 				printf("\n");
@@ -741,8 +741,18 @@ int writeCmd(char **progArgs) {
 	struct node *ptrToFile;
 	char *fNames, *str;
 	int doCheck;
-
+	/*
 	if (progArgs[4] == NULL || progArgs[3] == NULL || progArgs[2] == NULL || progArgs[1] == NULL) {
+		error(14, progArgs[0]);
+	} */
+	
+	if (progArgs[1] == NULL) {
+		error(14, progArgs[0]);
+	} else if (progArgs[2] == NULL) {
+		error(14, progArgs[0]);
+	} else if (progArgs[3] == NULL) {
+		error(14, progArgs[0]);
+	}  else if (progArgs[4] == NULL) {
 		error(14, progArgs[0]);
 	} else {
 		fNames = progArgs[1];
@@ -750,16 +760,24 @@ int writeCmd(char **progArgs) {
 		sizeOrig = strtoul(progArgs[3], NULL, 10);
 		lengthStr = strlen(str);
 		loc = strtoul(progArgs[2], NULL, 10);
-
+		/*
 		if (lengthStr > sizeOrig) {
 			size = sizeOrig;
 		} else {
 			size = lengthStr;
+		}*/
+		
+		if (lengthStr <= sizeOrig) {
+			size = lengthStr;
+		} else {
+			size = sizeOrig;
 		}
+		
+		
 		doCheck = lookupFile(fNames, thisDirClus, &file, &myDir, &offset);
 		if (!doCheck) {
 			error(2,fNames);
-		} else if ((file.sf.attr & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
+		} else if ((file.shFi.trait & ATTR_DIRECTORY) == ATTR_DIRECTORY) {
 			error(5, fNames);
 		} else {
 			myFile = retFileClus(&file);
@@ -772,7 +790,7 @@ int writeCmd(char **progArgs) {
 				printf("Error: %u + %u > %u: attempt to make file too large\n", loc, size, UINT_MAX);
 			} else {
 				fileW(&file, loc, size, str);
-				file.sf.last_acc_date = retTime();
+				file.shFi.dateLast = retTime();
 				setDirEntry(&file, myDir, offset);
 			}
 		}
@@ -914,7 +932,7 @@ int addList(struct list *theList, unsigned int fileClus, char *mode) {
 	/*
 	if ((theList->find(theList, fileClus) == NULL) && (options != 0x0)) {
 		addNode = calloc(1, sizeof(struct node));
-		addNode->fst_fileClus = fileClus;
+		addNode->fileClusFST = fileClus;
 		addNode->options = options;
 		addNode->next = theList->head;
 		theList->head = addNode;
@@ -925,7 +943,7 @@ int addList(struct list *theList, unsigned int fileClus, char *mode) {
 	if ((theList->find(theList, fileClus) == NULL)){
 		if (options != 0x0){
 			addNode = calloc(1, sizeof(struct node));
-			addNode->fst_fileClus = fileClus;
+			addNode->fileClusFST = fileClus;
 			addNode->options = options;
 			addNode->next = theList->head;
 			theList->head = addNode;
@@ -944,7 +962,7 @@ int remList(struct list *theList, unsigned int fileClus) {
 	struct node *ptr, *previous;
 	ptr = theList->head;
 	while (ptr != NULL) {
-		if (ptr->fst_fileClus == fileClus) {
+		if (ptr->fileClusFST == fileClus) {
 			break;
 		}
 		previous = ptr;
@@ -977,7 +995,7 @@ struct node *lookList(struct list *theList, unsigned int fileClus) {
 	struct node *ptr;
 	ptr = theList->head;
 	while (ptr != NULL) {
-		if (ptr->fst_fileClus == fileClus) {
+		if (ptr->fileClusFST == fileClus) {
 			break;
 		}
 		ptr = ptr->next;
@@ -1039,7 +1057,7 @@ if ((file->options & OPEN_WRITE) != OPEN_WRITE) {
 
 unsigned int retSize(union dirEntry *file) {
 	unsigned int size;
-	size = file->sf.sizeFile;
+	size = file->shFi.sizeFile;
 	if (endianVar) {
 		size = switch32(size);
 	}
@@ -1170,8 +1188,8 @@ int fileW(union dirEntry *file, unsigned int location, unsigned int size, char *
 		//begin += use;
 		begin = begin + use;
 	}
-	if (location + size > file->sf.sizeFile) {
-		file->sf.sizeFile = location + size;
+	if (location + size > file->shFi.sizeFile) {
+		file->shFi.sizeFile = location + size;
 	}
 	return 1;
 }
@@ -1190,22 +1208,22 @@ int fileDel(union dirEntry *ptrToFile, unsigned int dirClus, unsigned int entryD
 	
 	while (!theClus->empty(theClus)) {
 		theClusNode = theClus->get_head(theClus);
-		clustDel(theClusNode->fst_fileClus);
-		theClus->remove(theClus, theClusNode->fst_fileClus);
+		clustDel(theClusNode->fileClusFST);
+		theClus->remove(theClus, theClusNode->fileClusFST);
 	}
 
 	retNextDirEntry(&fileNext, dirClus, entryDig);
 	/*
-	if (fileNext.raw_bytes[0] == 0x00) {
-		ptrToFile->raw_bytes[0] = 0x00;
+	if (fileNext.natBytes[0] == 0x00) {
+		ptrToFile->natBytes[0] = 0x00;
 	} else {
-		ptrToFile->raw_bytes[0] = 0xE5;
+		ptrToFile->natBytes[0] = 0xE5;
 	}*/
 	
-	if (fileNext.raw_bytes[0] != 0x00) {
-		ptrToFile->raw_bytes[0] = 0xE5;
+	if (fileNext.natBytes[0] != 0x00) {
+		ptrToFile->natBytes[0] = 0xE5;
 	} else {
-		ptrToFile->raw_bytes[0] = 0x00;
+		ptrToFile->natBytes[0] = 0x00;
 	}
 	
 	delList(theClus);
@@ -1225,15 +1243,15 @@ int makeDirEntry(char *nameFile, unsigned int dirClus, union dirEntry *file, uns
 	unsigned int clus;
 	char shNames[11];
 	lookupOpenDirEntry(dirClus, file, ptrClus, ptrOff);
-	fileShort(nameFile, shNames);
-	strncpy(file->sf.name, shNames, 11);
-	file->sf.crt_time = file->sf.wrt_time = retTime();
-	file->sf.crt_date = file->sf.wrt_date = file->sf.last_acc_date = retDate();
-	file->sf.sizeFile = 0;
+	toShortFile(nameFile, shNames);
+	strncpy(file->shFi.name, shNames, 11);
+	file->shFi.timeCRT = file->shFi.timeWRT = retTime();
+	file->shFi.dateCRT = file->shFi.dateWRT = file->shFi.dateLast = retDate();
+	file->shFi.sizeFile = 0;
 	if (lookupClusNew) {
 		clus = lookupOpenClus();
-		file->sf.first_clus_hi = retHiVal(clus);
-		file->sf.first_clus_lo = retLoVal(clus);
+		file->shFi.initHiClus = retHiVal(clus);
+		file->shFi.intitLoClus = retLoVal(clus);
 		changeFats(clus, END_OF_CHAIN);
 	}
 	return 0;
@@ -1243,7 +1261,7 @@ int makeFile(char *nameFile, unsigned int dirClus) {
 	unsigned int clus, offset;
 	union dirEntry file;
 	makeDirEntry(nameFile, dirClus, &file, &clus, &offset, 1);
-	file.sf.attr = 0x00;
+	file.shFi.trait = 0x00;
 	setDirEntry(&file, clus, offset);
 	return 1;
 }
@@ -1252,34 +1270,34 @@ int makeDir(char *dir_name, unsigned int dirClus) {
 	unsigned int clus, offset, dClus1, dOff1, dClus2, dOff2, newDirClus;
 	union dirEntry file, dFile1, dFile2; // CHANGE HERE
 	makeDirEntry(dir_name, dirClus, &file, &clus, &offset, 1);
-	file.sf.attr = 0x10;
+	file.shFi.trait = 0x10;
 	setDirEntry(&file, clus, offset);
 	newDirClus = retFileClus(&file);
 	makeDirEntry(".", newDirClus, &dFile1, &dClus1, &dOff1, 0);
-	dFile1.sf.first_clus_hi = retHiVal(newDirClus);
-	dFile1.sf.first_clus_lo = retLoVal(newDirClus);
-	dFile1.sf.attr = 0x10;
+	dFile1.shFi.initHiClus = retHiVal(newDirClus);
+	dFile1.shFi.intitLoClus = retLoVal(newDirClus);
+	dFile1.shFi.trait = 0x10;
 	setDirEntry(&dFile1, dClus1, dOff1);
 	makeDirEntry("..", newDirClus, &dFile2, &dClus2, &dOff2, 0);
 	/*
 	if (dirClus == imageData.rclustr) {
-		dFile2.sf.first_clus_hi = 0x0000;
-		dFile2.sf.first_clus_lo = 0x0000;
+		dFile2.shFi.initHiClus = 0x0000;
+		dFile2.shFi.intitLoClus = 0x0000;
 	} else {
-		dFile2.sf.first_clus_hi = retHiVal(dirClus);
-		dFile2.sf.first_clus_lo = retLoVal(dirClus);
+		dFile2.shFi.initHiClus = retHiVal(dirClus);
+		dFile2.shFi.intitLoClus = retLoVal(dirClus);
 	}*/
 	
 	if (dirClus != imageData.rclustr) {
-		dFile2.sf.first_clus_hi = retHiVal(dirClus);
-		dFile2.sf.first_clus_lo = retLoVal(dirClus);
+		dFile2.shFi.initHiClus = retHiVal(dirClus);
+		dFile2.shFi.intitLoClus = retLoVal(dirClus);
 	} else {
-		dFile2.sf.first_clus_hi = 0x0000;
-		dFile2.sf.first_clus_lo = 0x0000;
+		dFile2.shFi.initHiClus = 0x0000;
+		dFile2.shFi.intitLoClus = 0x0000;
 	}
 	
 	
-	dFile2.sf.attr = 0x10;
+	dFile2.shFi.trait = 0x10;
 	setDirEntry(&dFile2, dClus2, dOff2);
 	return 1;
 }
@@ -1311,15 +1329,15 @@ char *readIn() {
 }
 
 
-char **parse(char *line) {
+char **parseFunc(char *line) {
 	char **args;
-	line = parseWhite(line);
-	args = parseArgs(line);
+	line = parseFuncWhite(line);
+	args = parseFuncArgs(line);
 	return args;
 }
 
 
-char *parseWhite(char *progLine) {
+char *parseFuncWhite(char *progLine) {
 	remLeadWhite(progLine);
 	remMidWhite(progLine);
 	//addMidWhite(progLine);
@@ -1328,7 +1346,7 @@ char *parseWhite(char *progLine) {
 }
 
 
-char **parseArgs(char *progLine) {
+char **parseFuncArgs(char *progLine) {
 	size_t argQuantity;
 	char *lineTemp;
 	int i = 0;
@@ -1666,7 +1684,7 @@ void ridCmdArgs(char **progArgs) {
 
 
 
-int setup(char *fNamesImage, char *nameRun) {
+int toStart(char *fNamesImage, char *nameRun) {
 	if ((fatImage = fopen(fNamesImage, "r+")) == NULL) {
 		perror(NULL);
 		return 0;
@@ -1859,11 +1877,20 @@ unsigned int *writeUnInt(unsigned int *ptr, long pos) {
 	long offset;
 	unsigned int tmp;
 	offset = pos - ftell(fatImage);
+	/*
 	if (endianVar) {
 		tmp = switch32(*ptr);
 	} else {
 		tmp = *ptr;
+	}*/
+	
+	if (!endianVar) {
+		tmp = *ptr;
+	} else {
+		tmp = switch32(*ptr);
 	}
+	
+	
 	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
@@ -1898,11 +1925,21 @@ unsigned short *writeUnSh(unsigned short *ptr, long pos) {
 	long offset;
 	unsigned short tmp;
 	offset = pos - ftell(fatImage);
+	/*
 	if (endianVar) {
 		tmp = switch16(*ptr);
 	} else {
 		tmp = *ptr;
+	}*/
+	
+	if (!endianVar) {
+		tmp = *ptr;
+	} else {
+		tmp = switch16(*ptr);
 	}
+	
+	
+	
 	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
@@ -2077,7 +2114,7 @@ int shortLow(char fNames[12], char shNames[11]) {
 }
 
 
-int fileShort(char fNames[12], char shNames[11]) {
+int toShortFile(char fNames[12], char shNames[11]) {
 	int i;
 	int j;
 	/*
@@ -2143,23 +2180,23 @@ int lookupFile(char *fNames, unsigned int dirClus, union dirEntry *ptr, unsigned
 	unsigned int thisClus, i, bound, finish;
 	union dirEntry file;
 	char shNames[11];
-	fileShort(fNames, shNames);
+	toShortFile(fNames, shNames);
 	thisClus = dirClus;
 	bound = imageData.bps*imageData.spc/32;
 	finish = 0;
 	do {
 		for (i = 0; i < bound; ++i) {
 			retDirEntry(&file, thisClus, i);
-			if (file.raw_bytes[0] == 0x00) {
+			if (file.natBytes[0] == 0x00) {
 				finish = 1;
 				break;
-			} else if (file.raw_bytes[0] == 0xE5) {
+			} else if (file.natBytes[0] == 0xE5) {
 				continue;
-			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
+			} else if ((file.lonFi.trait & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
 				continue;
-			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
+			} else if ((file.shFi.trait & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
 				continue;
-			} else if ((strncmp(file.sf.name, shNames, 11) == 0)) {
+			} else if ((strncmp(file.shFi.name, shNames, 11) == 0)) {
 				*ptr = file;
 				if (ptrClus != NULL) {
 					*ptrClus = thisClus;
@@ -2179,8 +2216,8 @@ int lookupFile(char *fNames, unsigned int dirClus, union dirEntry *ptr, unsigned
 unsigned int retFileClus(union dirEntry *ptr) {
 	unsigned int fileClus;
 	unsigned short hi, lo;
-	hi = ptr->sf.first_clus_hi;
-	lo = ptr->sf.first_clus_lo;
+	hi = ptr->shFi.initHiClus;
+	lo = ptr->shFi.intitLoClus;
 	if (endianVar) {
 		hi = switch16(hi);
 		lo = switch16(lo);
@@ -2203,11 +2240,11 @@ int emptyDir(union dirEntry *dir) {
 			/*
 			if (j == 0 || j == 1) {
 				continue;
-			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
+			} else if ((file.lonFi.trait & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
 				continue;
-			} else if (file.raw_bytes[0] == 0xE5) {
+			} else if (file.natBytes[0] == 0xE5) {
 				continue;
-			} else if (file.raw_bytes[0] == 0x00) {
+			} else if (file.natBytes[0] == 0x00) {
 				return 1;
 			} else {
 				return 0;
@@ -2217,9 +2254,9 @@ int emptyDir(union dirEntry *dir) {
 				continue;
 			} else if (j == 1) {
 				continue;
-			} else if (file.raw_bytes[0] == 0x00) {
+			} else if (file.natBytes[0] == 0x00) {
 				return 1;
-			} else if (file.raw_bytes[0] == 0xE5) {
+			} else if (file.natBytes[0] == 0xE5) {
 				continue;
 			} else {
 				return 0;
@@ -2347,31 +2384,31 @@ unsigned int lookupOpenDirEntry(unsigned int dirClus, union dirEntry *ptr, unsig
 		for (i = 0; i < bound; ++i) {
 			retDirEntry(&file, thisClus, i);
 			/*
-			if (file.raw_bytes[0] == 0x00) {
+			if (file.natBytes[0] == 0x00) {
 				setEntryNull(thisClus, i);
 				*ptr = file;
 				searched = 1;
 				break;
-			} else if (file.raw_bytes[0] == 0xE5) {
+			} else if (file.natBytes[0] == 0xE5) {
 				*ptr = file;
 				searched = 1;
 				break;
-			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
+			} else if ((file.lonFi.trait & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
 				continue;
-			} else if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
+			} else if ((file.shFi.trait & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
 				continue;
 			}*/
 			
-			if ((file.sf.attr & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
+			if ((file.shFi.trait & (ATTR_DIRECTORY | ATTR_VOLUME_ID)) == ATTR_VOLUME_ID) {
 				continue;
-			} else if ((file.lf.attr & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
+			} else if ((file.lonFi.trait & ATTR_LONG_NAME_MASK) == ATTR_LONG_NAME) {
 				continue;
-			} else if (file.raw_bytes[0] == 0x00) {
+			} else if (file.natBytes[0] == 0x00) {
 				setEntryNull(thisClus, i);
 				*ptr = file;
 				searched = 1;
 				break;
-			} else if (file.raw_bytes[0] == 0xE5) {
+			} else if (file.natBytes[0] == 0xE5) {
 				*ptr = file;
 				searched = 1;
 				break;
@@ -2424,7 +2461,7 @@ int setEntryNull(unsigned int dirClus, unsigned int entryDig) {
 	
 	
 	rChar(&file, entryByteOff + firstDirClus*imageData.bps, sizeof(union dirEntry));
-	file.raw_bytes[0] = 0x00;
+	file.natBytes[0] = 0x00;
 	wChar(&file, entryByteOff + firstDirClus*imageData.bps, sizeof(union dirEntry));
 	return 1;
 }
