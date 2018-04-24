@@ -67,7 +67,9 @@ void loopClean(char *progLine, char **progArgs) {
 }
 
 void globClean(void) {
-	delList(theOpen);
+	//delList(theOpen);
+	theOpen->clear(theOpen);
+	free(theOpen);
 	free(thisDir);
 	fclose(fatImage);
 }
@@ -907,11 +909,11 @@ struct list *makeList(void) {
 	return theList;
 }
 
-
+/* 
 void delList(struct list *pastList) {
 	pastList->clear(pastList);
 	free(pastList);
-}
+}*/ 
 
 
 void clearList(struct list *theList) {
@@ -1226,7 +1228,9 @@ int fileDel(union dirEntry *ptrToFile, unsigned int dirClus, unsigned int entryD
 		ptrToFile->natBytes[0] = 0x00;
 	}
 	
-	delList(theClus);
+	//delList(theClus);
+	theClus->clear(theClus);
+	free(theClus);
 	setDirEntry(ptrToFile, dirClus, entryDig);
 	return 1;
 }
