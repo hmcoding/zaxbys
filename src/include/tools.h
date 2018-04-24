@@ -23,7 +23,7 @@ unsigned char *readUnCh(unsigned char *ptr, long pos);
 unsigned int switch32(unsigned int val);
 unsigned short switch16(unsigned short val);
 
-int check_endian(void);
+int endianSee(void);
 
 unsigned int retSecClus(unsigned int clus);
 unsigned long retFatClusPos(unsigned int clus, unsigned int fat);
@@ -33,7 +33,7 @@ int chainEnd(unsigned int clus);
 int changeFats(unsigned int fileClus, unsigned int value);
 
 int shortLow(char fNames[12], char shNames[11]);
-int fileShort(char fNames[12], char shNames[11]);
+int toShortFile(char fNames[12], char shNames[11]);
 int lookupFile(char *fNames, unsigned int dirClus, union dirEntry *ptr, unsigned int *ptrClus, unsigned int *ptrOff);
 unsigned int retFileClus(union dirEntry *ptr);
 unsigned short retHiVal(unsigned int clus);
