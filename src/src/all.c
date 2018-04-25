@@ -1826,17 +1826,14 @@ void error(int type, char* print){
 
 
 // ABBY'S SECTION ***********************************
-
-
-
 int rChar(void *ptr, long pos, size_t use) {
 	long offset;
 	offset = pos - ftell(fatImage);
-	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
+	if (fread(ptr, sizeof(char), use, fatImage) != use) {
 		perror(NULL);
 		return 0;
 	}
-	if (fread(ptr, sizeof(char), use, fatImage) != use) {
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return 0;
 	}
@@ -1847,11 +1844,11 @@ int rChar(void *ptr, long pos, size_t use) {
 int wChar(void *ptr, long pos, size_t use) {
 	long offset;
 	offset = pos - ftell(fatImage);
-	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
+	if (fwrite(ptr, sizeof(char), use, fatImage) != use) {
 		perror(NULL);
 		return 0;
 	}
-	if (fwrite(ptr, sizeof(char), use, fatImage) != use) {
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return 0;
 	}
@@ -1887,22 +1884,20 @@ unsigned int *writeUnInt(unsigned int *ptr, long pos) {
 	} else {
 		tmp = *ptr;
 	}*/
-	
+	if (fwrite(&tmp, sizeof(unsigned int), 1, fatImage) != 1) {
+		perror(NULL);
+		return NULL;
+	}
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
+		perror(NULL);
+		return NULL;
+	}
 	if (!endianVar) {
 		tmp = *ptr;
 	} else {
 		tmp = switch32(*ptr);
 	}
-	
-	
-	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
-		perror(NULL);
-		return NULL;
-	}
-	if (fwrite(&tmp, sizeof(unsigned int), 1, fatImage) != 1) {
-		perror(NULL);
-		return NULL;
-	}
+
 	return ptr;
 }
 
@@ -1910,16 +1905,17 @@ unsigned int *writeUnInt(unsigned int *ptr, long pos) {
 unsigned short *readUnSh(unsigned short *ptr, long pos) {
 	long offset;
 	offset = pos - ftell(fatImage);
-	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
-		perror(NULL);
-		return NULL;
+
+	if (endianVar) {
+		*ptr = switch16(*ptr);
 	}
 	if (fread(ptr, sizeof(unsigned short), 1, fatImage) != 1) {
 		perror(NULL);
 		return NULL;
 	}
-	if (endianVar) {
-		*ptr = switch16(*ptr);
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
+		perror(NULL);
+		return NULL;
 	}
 	return ptr;
 }
@@ -1936,13 +1932,6 @@ unsigned short *writeUnSh(unsigned short *ptr, long pos) {
 		tmp = *ptr;
 	}*/
 	
-	if (!endianVar) {
-		tmp = *ptr;
-	} else {
-		tmp = switch16(*ptr);
-	}
-	
-	
 	
 	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
@@ -1952,6 +1941,13 @@ unsigned short *writeUnSh(unsigned short *ptr, long pos) {
 		perror(NULL);
 		return NULL;
 	}
+	if (!endianVar) {
+		tmp = *ptr;
+	} else {
+		tmp = switch16(*ptr);
+	}
+	
+	
 	return ptr;
 }
 
@@ -1959,11 +1955,12 @@ unsigned short *writeUnSh(unsigned short *ptr, long pos) {
 unsigned char *readUnCh(unsigned char *ptr, long pos) {
 	long offset;
 	offset = pos - ftell(fatImage);
-	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
+
+	if (fread(ptr, sizeof(char), 1, fatImage) != 1) {
 		perror(NULL);
 		return NULL;
 	}
-	if (fread(ptr, sizeof(char), 1, fatImage) != 1) {
+	if (fseek(fatImage, offset, SEEK_CUR) == -1) {
 		perror(NULL);
 		return NULL;
 	}
@@ -2019,6 +2016,7 @@ unsigned long retFatClusPos(unsigned int clus, unsigned int fat) {
 	beginSecFAT = imageData.rsvd_s_c + i*imageData.fsz32;
 	return beginSecFAT*imageData.bps + 4*clus;
 }
+
 // START OF HUNTER'S SECTION ************************************
 
 
