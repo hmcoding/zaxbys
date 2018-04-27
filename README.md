@@ -28,9 +28,9 @@ To execute:
 	$ ./fat32program <FAT32_IMG>
 
 Known bugs:
-
+none
 
 Unfinished portions:
-
+none
 
 Special considerations:
