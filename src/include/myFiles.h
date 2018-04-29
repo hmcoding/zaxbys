@@ -1,5 +1,5 @@
-#ifndef FILE_TYPES_H__
-#define FILE_TYPES_H__
+#ifndef MYFILES_H__
+#define MYFILES_H__
 
 
 #define ATTR_READ_ONLY			0x01
@@ -22,7 +22,6 @@ struct fileShort {
 	char name[11];
 	unsigned char trait;
 	unsigned char ntr;
-	//unsigned char timeCRT_tenth;
 	unsigned short timeCRT;
 	unsigned short dateCRT;
 	unsigned short dateLast;
@@ -34,14 +33,8 @@ struct fileShort {
 };
 
 struct fileLong {
-	//unsigned char ord;
-	//char name1[10];
 	unsigned char trait;
-	//unsigned char type;
-	//unsigned char check_sum;
-	//char name2[12];
 	unsigned short intitLoClus;
-	//char name3[4];
 };
 
 union dirEntry {
@@ -50,7 +43,6 @@ union dirEntry {
 	struct fileLong lonFi;
 };
 
-// singlely-linked list definition
 struct node {
 	unsigned int fileClusFST;
 	unsigned char options;
@@ -69,7 +61,6 @@ struct list {
 };
 
 struct list *makeList(void);
-//void delList(struct list *pastList);
 
 void clearList(struct list *theList);
 int addList(struct list *theList, unsigned int fileClus, char *mode);
