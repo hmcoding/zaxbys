@@ -60,30 +60,31 @@ struct list {
 	unsigned int size;
 };
 
-struct list *makeList(void);
-
-void clearList(struct list *theList);
-int addList(struct list *theList, unsigned int fileClus, char *mode);
-int remList(struct list *theList, unsigned int fileClus);
-struct node *lookList(struct list *theList, unsigned int fileClus);
-struct node *headList(struct list *theList);
-int emptyList(struct list *theList);
-unsigned char toByte(char *mode);
-int readCheck(struct node *file);
-int writeCheck(struct node *file);
-unsigned int retSize(union dirEntry *file);
-
-int retDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig);
 int setDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig);
+int retDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig);
 int retNextDirEntry(union dirEntry *ptr, unsigned int dirClus, unsigned int entryDig);
-int fileR(union dirEntry *file, unsigned int location, unsigned int size);
-int fileW(union dirEntry *file, unsigned int location, unsigned int size, char *str);
-int fileDel(union dirEntry *file, unsigned int dirClus, unsigned int entryDig);
-int clustDel(unsigned int fileClus);
-
-int makeDirEntry(char *nameFile, unsigned int dirClus, union dirEntry *file, unsigned int *ptrClus, unsigned int *ptrOff, int lookupClusNew);
 int makeFile(char *nameFile, unsigned int dirClus);
 int makeDir(char *dir_name, unsigned int dirClus);
+int makeDirEntry(char *nameFile, unsigned int dirClus, union dirEntry *file, unsigned int *ptrClus, unsigned int *ptrOff, int lookupClusNew);
+struct list *makeList(void);
+void clearList(struct list *theList);
+int remList(struct list *theList, unsigned int fileClus);
+int emptyList(struct list *theList);
+int addList(struct list *theList, unsigned int fileClus, char *mode);
+struct node *lookList(struct list *theList, unsigned int fileClus);
+struct node *headList(struct list *theList);
+unsigned char toByte(char *mode);
+unsigned int retSize(union dirEntry *file);
+int readCheck(struct node *file);
+int writeCheck(struct node *file);
+int fileR(union dirEntry *file, unsigned int location, unsigned int size);
+int fileW(union dirEntry *file, unsigned int location, unsigned int size, char *str);
+int clustDel(unsigned int fileClus);
+int fileDel(union dirEntry *file, unsigned int dirClus, unsigned int entryDig);
+
+
+
+
 
 
 #endif
