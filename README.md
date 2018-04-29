@@ -12,13 +12,13 @@ Contents:
 		- main.c
 		- Makefile
 		- include
-			- file_types.h
-			- parse.h
-			- setup.h
-			- tools.h
-			- utility.h
+			- myFiles.h
+			- myParser.h
+			- myStarter.h
+			- myHelpers.h
+			- myUtility.h
 		- src
-			- all.c
+			- myFat.c
 
 To compile:
 	$ cd ./src
