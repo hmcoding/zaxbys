@@ -6,22 +6,17 @@
 
 
 char *readIn();
-
-
 char **parseFunc(char *progLine);
 char *parseFuncWhite(char *progLine);
-char **parseFuncArgs(char *progLine);
-
-
+char *addMidWhite(char *progLine);
 char *remLeadWhite(char *progLine);
 char *remMidWhite(char *progLine);
-char *addMidWhite(char *progLine);
 char *remTrailWhite(char *progLine);
-
-
-int checkLastQuote(char *ptr);
+char **parseFuncArgs(char *progLine);
 size_t trackArgs(char *progLine);
 int trackCmdSize(char *progLine);
+int checkLastQuote(char *ptr);
+
 
 
 
