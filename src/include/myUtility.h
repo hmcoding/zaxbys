@@ -1,5 +1,5 @@
-#ifndef UTILITY_H__
-#define UTILITY_H__
+#ifndef MYUTILITY_H__
+#define MYUTILITY_H__
 
 union dirEntry;
 
