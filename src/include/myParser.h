@@ -1,5 +1,5 @@
-#ifndef PARSER_H__
-#define PARSER_H__
+#ifndef MYPARSER_H__
+#define MYPARSER_H__
 
 
 #define INPUT_BUFFER_SIZE 1024
@@ -22,10 +22,7 @@ char *remTrailWhite(char *progLine);
 int checkLastQuote(char *ptr);
 size_t trackArgs(char *progLine);
 int trackCmdSize(char *progLine);
-/*
-void ridCmdLine(char *progLine);
-void ridCmdArgs(char **progArgs);
-*/
+
 
 
 #endif
