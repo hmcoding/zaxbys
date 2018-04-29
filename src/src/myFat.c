@@ -557,7 +557,7 @@ int readCmd(char **progArgs) {
 			if (ptrFile == NULL) {
 				error(6, fNames);
 			} else if (loc + size > sizeFile) {
-				printf("Error: %u + %u > %u: attempt to read beyond EOF\n", loc, size, sizeFile);
+				printf("Error: %u + %u > %u: Cannot read beyond EOF\n", loc, size, sizeFile);
 			} else if (!readCheck(ptrFile)) {
 				error(15, fNames);
 			} else {
@@ -615,7 +615,7 @@ int writeCmd(char **progArgs) {
 			} else if (!writeCheck(ptrToFile)) {
 				error(16, fNames);
 			} else if (loc > UINT_MAX - size) {
-				printf("Error: %u + %u > %u: attempt to make file too large\n", loc, size, UINT_MAX);
+				printf("Error: %u + %u > %u: Cannot make file too large\n", loc, size, UINT_MAX);
 			} else {
 				fileW(&file, loc, size, str);
 				file.shFi.dateLast = retTime();
