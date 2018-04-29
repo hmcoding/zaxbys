@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 	int program;
 
 	if (argc < 2) {
-		printf("USAGE: %s <FAT32 img>\n", argv[0]);
+		printf("Usage: %s <FAT32 img>\n", argv[0]);
 		return 0;
 	}
 
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
 		displayPrompt();
 		if((progLine = readIn()) == NULL) {
-			fprintf(stderr, "Bad read, try again\n");
+			fprintf(stderr, "Bad read, please try again\n");
 			continue;
 		}
 		progArgs = parseFunc(progLine);
