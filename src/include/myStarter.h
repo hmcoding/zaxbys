@@ -27,11 +27,12 @@ extern unsigned int thisDirSec;
 extern struct list *theOpen;
 extern unsigned int numClus;
 
+void displayPrompt(void);
 int toStart(char *fNamesImage, char *nameRun);
+int setOpened(void);
 int getFatInfo(void);
 int setRootDir(void);
-int setOpened(void);
-void displayPrompt(void);
-void displayIntro(char *fNamesImage, char *nameRun);
+
+
 
 #endif
