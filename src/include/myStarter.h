@@ -1,9 +1,8 @@
-#ifndef SETUP_H__
-#define SETUP_H__
+#ifndef MYSTARTER_H__
+#define MYSTARTER_H__
 
 #define INIT_CUR_DIR_CAP 256
 
-// struct for the BPB header variables
 struct fatData {
 	unsigned short bps;
 	unsigned char spc;
@@ -16,7 +15,6 @@ struct fatData {
 	unsigned int rclustr;
 };
 
-// global variables 
 extern int endianVar;
 extern FILE *fatImage;
 extern struct fatData imageData;
@@ -29,7 +27,6 @@ extern unsigned int thisDirSec;
 extern struct list *theOpen;
 extern unsigned int numClus;
 
-// toStart functions
 int toStart(char *fNamesImage, char *nameRun);
 int getFatInfo(void);
 int setRootDir(void);
