@@ -1,11 +1,10 @@
-#ifndef TOOLS_H__
-#define TOOLS_H__
+#ifndef MYHELPERS_H__
+#define MYHELPERS_H__
 
 
 #define END_OF_CHAIN 0x0FFFFFF8
 #define NEXT_CLUS_MASK 0x0FFFFFFF
 
-// forward declaration of type from another header file
 union dirEntry;
 
 int rChar(void *ptr, long pos, size_t use);
