@@ -1,10 +1,13 @@
 # project3
 FAT32 Filesystem
 
-Group Member's & Division of Labor:
+Group Member's:
 	- Holly Culver
 	- Abigail Perry
 	- Hunter Davis
+	
+Division of Labor:
+We all worked together on each portion of the project.
 
 Contents:
 	- Readme
